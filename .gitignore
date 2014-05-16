@@ -1,0 +1,8 @@
+*.o
+*.seg
+*.bin
+*.hex
+*.out
+*.jlink
+*.log
+SEGGER_SN.txt
