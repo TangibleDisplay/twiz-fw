@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	
+	<Import Project="$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"/>
+    <Import Project="$(MSBuildExtensionsPath)\NordicTasks\Nordic.Tasks.Targets"/>
+	
+	<Target Name="Lint">
+		
+		<ItemGroup>
+			<KeilProjects Include="*.uvproj" />
+		</ItemGroup>
+		
+		<Lint Input="@(KeilProjects)" Config="..\..\..\..\keil_arm_uv4.lnt" Tool="c:\lint\lint-nt.exe" Verbose="32000" Ignore="-100" StopOnError="$(LintStopOnError)" /> 
+	
+	</Target>
+  
+</Project>

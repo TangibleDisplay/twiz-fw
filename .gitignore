@@ -1,8 +1,16 @@
+# build files
+build/*
+obj/*
+bin/*
+
+# osx files
+.DS_Store
+
+# Object files
 *.o
-*.seg
-*.bin
-*.hex
-*.out
+
+# jlink files
 *.jlink
 *.log
-SEGGER_SN.txt
+
+
