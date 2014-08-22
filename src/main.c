@@ -33,13 +33,15 @@ int main(void)
         if (bleUartConnected()) {
             power_manage();
             if (flag0) {
-                nrf_delay_ms(50); // TODO find why nothing here is printed without it
+                nrf_delay_ms(30); // TODO find why useful
                 print("Connected\n");
 
-                err = mpuInit(); // TODO find why it doesn't always work
+                nrf_delay_ms(30); // TODO find why useful
+                err = mpuInit();
                 APP_ERROR_CHECK_BOOL(err);
                 print("IMU init OK\n");
 
+                nrf_gpio_pin_set(LED_0);
                 flag0 = false;
             }
         } else {
