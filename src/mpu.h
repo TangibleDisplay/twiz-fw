@@ -133,6 +133,8 @@
 /** mpu9150 functions **/
 
 bool mpuInit(void);
+int i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t const *data);
+int i2c_read(uint8_t  devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t *data);
 
 static uint8_t mpuBuffer[16];
 

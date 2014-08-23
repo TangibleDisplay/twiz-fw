@@ -58,4 +58,46 @@ bool mpuInit()
     return true;
 }
 
+// HAL for invensense:
+
+int i2c_write(uint8_t devAddr,
+              uint8_t regAddr,
+              uint8_t dataLength,
+              uint8_t const *data)
+{
+    devAddr <<= 1;                              // TODO class attribute + CHECK IF USEFUL !!
+    bool transfer_succeeded;
+
+#define TESTED_BUT_SLOW
+#ifdef TESTED_BUT_SLOW                          // TODO: RE-TEST IT !!
+
+    const int bytes_num = 1 + dataLength;
+	uint8_t buffer[bytes_num];
+	buffer[0] = regAddr;
+    for (int i = 0; i < dataLength; i++)        // TODO: hack twi_master_write to avoid this !
+        buffer[i+1] = data[i];
+    transfer_succeeded = twi_master_transfer(devAddr, buffer, bytes_num, TWI_ISSUE_STOP);
+
+#else                                           // TODO: TEST IT !!
+
+    transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_DONT_ISSUE_STOP);
+    transfer_succeeded &= twi_master_transfer(devAddr, data, dataLength, TWI_ISSUE_STOP);
+
+#endif
+
+    return !transfer_succeeded; // negate to comply with invensense expectation: return 0 => OK
+}
+
+int i2c_read(uint8_t devAddr,
+             uint8_t regAddr,
+             uint8_t dataLength,
+             uint8_t *data)
+{
+    devAddr <<= 1;                              // TODO class attribute + CHECK IF USEFUL !!
+    bool transfer_succeeded;
+    transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_DONT_ISSUE_STOP);
+    transfer_succeeded &= twi_master_transfer(devAddr, data, dataLength, TWI_ISSUE_STOP);
+    return !transfer_succeeded; // negate to comply with invensense expectation: return 0 => OK
+}
+
 #endif // MPU_C
