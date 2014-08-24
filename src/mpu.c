@@ -6,7 +6,6 @@
 #include "twi_master.h"
 #include "mpu.h"
 #include "nrf_delay.h"
-#include "hal.h"
 
 #define TWI_RETRIES 3
 
@@ -61,54 +60,37 @@ bool mpuInit()
 
 // HAL for invensense:
 
-int i2c_write(uint8_t devAddr,
-              uint8_t regAddr,
-              uint8_t dataLength,
-              uint8_t const *data)
+int i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t const *data)
 {
-    LOG("i2c_write(devAdr=0x%x, regAdr=0x%x, len=%d) - data:", devAddr, regAddr, dataLength);
-    for (int i = 0; i < dataLength; i++)        // TODO: hack twi_master_write to avoid this !
-        LOG(" 0x%x", data[i]);
-    LOG("\n");
-
-    devAddr <<= 1;                              // TODO class attribute + CHECK IF USEFUL !!
     bool transfer_succeeded;
+    devAddr <<= 1;
 
-#define TESTED_BUT_SLOW
-#ifdef TESTED_BUT_SLOW                          // TODO: RE-TEST IT !!
-
+#if 0 // TODO: FIND WHY IT FAILS! (Compass not found.)
+    transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_ISSUE_STOP);
+    transfer_succeeded &= twi_master_transfer(devAddr, data, dataLength, TWI_ISSUE_STOP);
+#else
     const int bytes_num = 1 + dataLength;
 	uint8_t buffer[bytes_num];
 	buffer[0] = regAddr;
-    for (int i = 0; i < dataLength; i++)        // TODO: hack twi_master_write to avoid this !
+
+    for (int i = 0; i < dataLength; i++) // TODO: hack twi_master_write to avoid this !?
         buffer[i+1] = data[i];
+
     transfer_succeeded = twi_master_transfer(devAddr, buffer, bytes_num, TWI_ISSUE_STOP);
-
-#else                                           // TODO: TEST IT !!
-
-    transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_DONT_ISSUE_STOP);
-    transfer_succeeded &= twi_master_transfer(devAddr, data, dataLength, TWI_ISSUE_STOP);
-
 #endif
 
-    return !transfer_succeeded; // negate to comply with invensense expectation: return 0 => OK
+    return !transfer_succeeded; // invensense expects an error code: 0 = OK, error otherwise
 }
 
-int i2c_read(uint8_t devAddr,
-             uint8_t regAddr,
-             uint8_t dataLength,
-             uint8_t *data)
+int i2c_read(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t *data)
 {
-    LOG("i2c_read(devAdr=0x%x, regAdr=0x%x, len=%d) - data:", devAddr, regAddr, dataLength);
-    for (int i = 0; i < dataLength; i++)        // TODO: hack twi_master_write to avoid this !
-        LOG(" 0x%x", data[i]);
-    LOG("\n");
-
-    devAddr <<= 1;                              // TODO class attribute + CHECK IF USEFUL !!
     bool transfer_succeeded;
+    devAddr <<= 1;
+
     transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_DONT_ISSUE_STOP);
-    transfer_succeeded &= twi_master_transfer(devAddr, data, dataLength, TWI_ISSUE_STOP);
-    return !transfer_succeeded; // negate to comply with invensense expectation: return 0 => OK
+    transfer_succeeded &= twi_master_transfer(devAddr|TWI_READ_BIT, data, dataLength, TWI_ISSUE_STOP);
+
+    return !transfer_succeeded; // invensense expects an error code: 0 = OK, error otherwise
 }
 
 #endif // MPU_C
