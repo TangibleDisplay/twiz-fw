@@ -1,11 +1,10 @@
-# Project Source
+C_SOURCE_FILES += main.c
+
+# nRF51822 Source
 C_SOURCE_FILES += hardware.c
 C_SOURCE_FILES += ble_uart.c
 C_SOURCE_FILES += ble_nus.c
 C_SOURCE_FILES += mpu.c
-C_SOURCE_FILES += main.c
-
-# SDK Source
 C_SOURCE_FILES += nrf_delay.c
 C_SOURCE_FILES += ble_srv_common.c
 C_SOURCE_FILES += ble_advdata.c
@@ -15,16 +14,25 @@ C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += app_timer.c
 C_SOURCE_FILES += twi_hw_master.c
 
+# MPU9150 Source
+C_SOURCE_FILES += inv_mpu.c
+#C_SOURCE_FILES += inv_mpu_dmp_motion_driver.c
+
+
 # startup files
 C_SOURCE_FILES += system_$(DEVICESERIES).c
 ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
 
+# nRF51822 Paths
 SDK_PATH = lib/nrf51822/sdk_nrf51822_5.2.0/
 SDK_SOURCE_PATH = $(SDK_PATH)Source/
 SDK_INCLUDE_PATH = $(SDK_PATH)Include/
 
-USE_LOADER := 0
-USE_S110 := 1
+# MPU9150 Paths
+MPU_PATH = lib/mpu9150/
+MPU_EMPL_PATH = $(MPU_PATH)eMD6/core/driver/eMPL/
+
+
 SOFTDEVICE := lib/nrf51822/s110_nrf51822_6.0.0/s110_nrf51822_6.0.0_softdevice.hex
 
 OBJECT_DIRECTORY := obj
@@ -60,7 +68,7 @@ RM 				:= rm -rf
 JLINK = -JLinkExe
 JLINKGDBSERVER = JLinkGDBServer
 
-# Source Paths
+# nRF51822 Source Paths
 C_SOURCE_PATHS += src
 C_SOURCE_PATHS += src/startup
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)nrf_delay
@@ -71,7 +79,11 @@ C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble/ble_services
 ASSEMBLER_SOURCE_PATHS = src/startup
 
-# Include Paths
+# MPU9150 Source Paths
+C_SOURCE_PATHS += $(MPU_EMPL_PATH)
+
+
+# nRF51822 Include Paths
 INCLUDEPATHS += -Isrc
 INCLUDEPATHS += -I$(SDK_PATH)Include
 INCLUDEPATHS += -I$(SDK_PATH)Include/app_common
@@ -81,9 +93,14 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/ble
 INCLUDEPATHS += -I$(SDK_PATH)Include/ble/ble_services
 INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 
+# MPU9150 Include Paths
+INCLUDEPATHS += -I$(MPU_EMPL_PATH)
+
+
 # Compiler flags
 CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
+CFLAGS += -DMPU9150
 #CFLAGS += -Wall# -Werror
 
 # Linker flags

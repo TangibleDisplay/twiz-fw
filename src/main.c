@@ -5,6 +5,7 @@
 #include "mpu.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "inv_mpu.h"
 
 /**
  * @brief Function for application main entry.
@@ -37,7 +38,8 @@ int main(void)
                 print("Connected\n");
 
                 nrf_delay_ms(30); // TODO find why useful
-                err = mpuInit();
+                struct int_param_s int_param;
+                err = mpu_init(&int_param); // TODO: set interrupt pin !
                 APP_ERROR_CHECK_BOOL(err);
                 print("IMU init OK\n");
 
