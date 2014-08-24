@@ -6,14 +6,22 @@
 #include "mpu.h"            // i2c_read() & i2c_write()
 #include <stdlib.h>         // for sprintf()
 #include "simple_uart.h"    // simple_uart_putstring()
-//#include "ble_uart.h"       // TODO later: use print() & printInt()
+#include "ble_uart.h"       // TODO later: use print(), printInt() & printHex()
 
-#define STR(s)      (const uint8_t *)(s)
-#define LOG(s)      simple_uart_putstring(STR(s))
-#define log_e(s)    LOG(s)
-#define log_i(...)  { char s[99]; sprintf(s, __VA_ARGS__); LOG(STR(s)); }
-                    /* s[81] should suffice but this litle margin can't hurt
-                     * */
+#define USE_SIMPLE_UART true
+#if USE_SIMPLE_UART
+#define uart_init() simple_uart_config(3,0,2,1,0) /*rts, tx, cts, rx, flow-ctrl*/
+#define LOG_STR(s)  simple_uart_putstring((const uint8_t *)(s))
+#else // BLE_UART
+#define uart_init() /* TODO ?*/
+#define LOG_STR(s)  print(s)
+#endif
+
+#define LOG(...)    { char s[99]; sprintf(s, __VA_ARGS__); LOG_STR(s); }
+                    /* s[81] should suffice but this litle margin can't hurt */
+
+#define log_e(...)  LOG(__VA_ARGS__)
+#define log_i(...)  LOG(__VA_ARGS__)
 
 #define delay_ms    nrf_delay_ms
 #define reg_int_cb  /* TODO: register interrupt call back function */

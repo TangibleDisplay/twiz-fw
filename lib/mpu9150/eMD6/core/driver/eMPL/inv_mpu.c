@@ -632,6 +632,8 @@ int mpu_read_reg(unsigned char reg, unsigned char *data)
  */
 int mpu_init(struct int_param_s *int_param)
 {
+    LOG("mpu_init(): 0\n");
+
     unsigned char data[6];
 
     /* Reset device. */
@@ -640,10 +642,14 @@ int mpu_init(struct int_param_s *int_param)
         return -1;
     delay_ms(100);
 
+    LOG("mpu_init(): 1\n");
+
     /* Wake up chip. */
     data[0] = 0x00;
     if (i2c_write(st.hw->addr, st.reg->pwr_mgmt_1, 1, data))
         return -1;
+
+    LOG("mpu_init(): 2\n");
 
    st.chip_cfg.accel_half = 0;
 
@@ -655,6 +661,8 @@ int mpu_init(struct int_param_s *int_param)
     if (i2c_write(st.hw->addr, st.reg->accel_cfg2, 1, data))
         return -1;
 #endif
+
+    LOG("mpu_init(): 3\n");
 
     /* Set to invalid values to ensure no I2C writes are skipped. */
     st.chip_cfg.sensors = 0xFF;
@@ -681,6 +689,8 @@ int mpu_init(struct int_param_s *int_param)
 
     // TODO investigate below parameters !!!
 
+    LOG("mpu_init(): 4\n");
+
     if (mpu_set_gyro_fsr(2000))
         return -1;
     if (mpu_set_accel_fsr(2))
@@ -691,6 +701,8 @@ int mpu_init(struct int_param_s *int_param)
         return -1;
     if (mpu_configure_fifo(0))
         return -1;
+
+    LOG("mpu_init(): 4\n");
 
 #ifndef EMPL_TARGET_STM32L /* TODO: dig */
     if (int_param)

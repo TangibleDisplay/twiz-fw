@@ -6,6 +6,7 @@
 #include "twi_master.h"
 #include "mpu.h"
 #include "nrf_delay.h"
+#include "hal.h"
 
 #define TWI_RETRIES 3
 
@@ -65,6 +66,11 @@ int i2c_write(uint8_t devAddr,
               uint8_t dataLength,
               uint8_t const *data)
 {
+    LOG("i2c_write(devAdr=0x%x, regAdr=0x%x, len=%d) - data:", devAddr, regAddr, dataLength);
+    for (int i = 0; i < dataLength; i++)        // TODO: hack twi_master_write to avoid this !
+        LOG(" 0x%x", data[i]);
+    LOG("\n");
+
     devAddr <<= 1;                              // TODO class attribute + CHECK IF USEFUL !!
     bool transfer_succeeded;
 
@@ -93,6 +99,11 @@ int i2c_read(uint8_t devAddr,
              uint8_t dataLength,
              uint8_t *data)
 {
+    LOG("i2c_read(devAdr=0x%x, regAdr=0x%x, len=%d) - data:", devAddr, regAddr, dataLength);
+    for (int i = 0; i < dataLength; i++)        // TODO: hack twi_master_write to avoid this !
+        LOG(" 0x%x", data[i]);
+    LOG("\n");
+
     devAddr <<= 1;                              // TODO class attribute + CHECK IF USEFUL !!
     bool transfer_succeeded;
     transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_DONT_ISSUE_STOP);

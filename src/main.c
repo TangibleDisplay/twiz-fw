@@ -6,6 +6,7 @@
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "inv_mpu.h"
+#include "hal.h"
 
 /**
  * @brief Function for application main entry.
@@ -22,6 +23,9 @@ int main(void)
     conn_params_init();
     sec_params_init();
 
+    uart_init();
+    LOG("\nstart\n");
+
     advertising_start();
 
     bool flag0 = true;
@@ -31,17 +35,23 @@ int main(void)
 
     while(true)
     {
-        if (bleUartConnected()) {
+        //if (bleUartConnected()) {
+        if (1) {
             power_manage();
             if (flag0) {
-                nrf_delay_ms(30); // TODO find why useful
+                nrf_gpio_pin_clear(LED_0);
+                nrf_delay_ms(50); // TODO find why useful
                 print("Connected\n");
 
                 nrf_delay_ms(30); // TODO find why useful
                 struct int_param_s int_param;
                 err = mpu_init(&int_param); // TODO: set interrupt pin !
-                APP_ERROR_CHECK_BOOL(err);
-                print("IMU init OK\n");
+                // APP_ERROR_CHECK_BOOL(err);
+                if (err) {
+                    LOG("IMU init error code: %d\n", err);
+                } else {
+                    LOG("IMU init OK\n");
+                }
 
                 nrf_gpio_pin_set(LED_0);
                 flag0 = false;
