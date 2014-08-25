@@ -16,7 +16,15 @@ C_SOURCE_FILES += twi_hw_master.c
 
 # MPU9150 Source
 C_SOURCE_FILES += inv_mpu.c
-#C_SOURCE_FILES += inv_mpu_dmp_motion_driver.c
+C_SOURCE_FILES += inv_mpu_dmp_motion_driver.c
+C_SOURCE_FILES += mpl.c
+C_SOURCE_FILES += storage_manager.c
+C_SOURCE_FILES += start_manager.c
+C_SOURCE_FILES += data_builder.c
+C_SOURCE_FILES += results_holder.c
+C_SOURCE_FILES += ml_math_func.c
+C_SOURCE_FILES += mlmath.c
+C_SOURCE_FILES += eMPL_outputs.c
 
 
 # startup files
@@ -30,9 +38,8 @@ SDK_INCLUDE_PATH = $(SDK_PATH)Include/
 
 # MPU9150 Paths
 MPU_PATH = lib/mpu9150/
-MPU_EMPL_PATH = $(MPU_PATH)eMD6/core/driver/eMPL/
 
-
+LIBRARIES += $(MPU_PATH)eMD6/core/mpl/libmpllib.a
 SOFTDEVICE := lib/nrf51822/s110_nrf51822_6.0.0/s110_nrf51822_6.0.0_softdevice.hex
 
 OBJECT_DIRECTORY := obj
@@ -80,7 +87,8 @@ C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble/ble_services
 ASSEMBLER_SOURCE_PATHS = src/startup
 
 # MPU9150 Source Paths
-C_SOURCE_PATHS += $(MPU_EMPL_PATH)
+C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/eMPL/
+C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/mllite/
 
 
 # nRF51822 Include Paths
@@ -94,7 +102,11 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/ble/ble_services
 INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 
 # MPU9150 Include Paths
-INCLUDEPATHS += -I$(MPU_EMPL_PATH)
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/eMPL/
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/include/
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mllite/
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mpl
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/eMPL-hal
 
 
 # Compiler flags
@@ -181,7 +193,7 @@ $(OBJECT_DIRECTORY)/%.o: %.s
 
 ## Link C and assembler objects to an .out file
 $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out: $(BUILD_DIRECTORIES) $(C_OBJECTS) $(ASSEMBLER_OBJECTS)
-	$(CC) $(LDFLAGS) $(C_OBJECTS) $(ASSEMBLER_OBJECTS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
+	$(CC) $(LDFLAGS) $(C_OBJECTS) $(ASSEMBLER_OBJECTS) $(LIBRARIES) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
 
 ## Create binary .bin file from the .out file
 $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out

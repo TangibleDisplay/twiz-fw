@@ -33,11 +33,11 @@
  * get_ms(unsigned long *count)
  */
 #if defined EMPL_TARGET_STM32L
-#include "i2c.h"   
+#include "i2c.h"
 #include "main.h"
-   
+
 #define i2c_write   Sensors_I2C_WriteRegister_swap
-#define i2c_read    Sensors_I2C_ReadRegister_swap  
+#define i2c_read    Sensors_I2C_ReadRegister_swap
 #define get_ms      stm32l_get_clock_ms
 
 #elif defined MOTION_DRIVER_TARGET_MSP430
@@ -71,7 +71,7 @@
 #define log_e       MPL_LOGE
 
 #else
-#error  Gyro driver is missing the system layer implementations.
+#include "hal.h"
 #endif
 
 /* These defines are copied from dmpDefaultMPU6050.c in the general MPL

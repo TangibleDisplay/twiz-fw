@@ -33,5 +33,7 @@
 #define fabs(x)     abs(x) /*double*/
 #define fabsf(x)    abs(x) /*float*/
 
+#define __no_operation __NOP
+
 #endif // HAL_H
 
