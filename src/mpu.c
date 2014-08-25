@@ -60,6 +60,11 @@ bool mpuInit()
 
 // HAL for invensense:
 
+int i2c_init(void)
+{
+    return !twi_master_init(); // invensense expects an error code: 0 = OK, error otherwise
+}
+
 int i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t const *data)
 {
     bool transfer_succeeded;

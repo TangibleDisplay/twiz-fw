@@ -24,7 +24,6 @@
 #include <math.h>
 #include "inv_mpu.h"
 #include "hal.h"
-#include "twi_master.h"
 
 /* The following functions must be defined for this platform:
  * i2c_write(unsigned char slave_addr, unsigned char reg_addr,
@@ -633,9 +632,10 @@ int mpu_read_reg(unsigned char reg, unsigned char *data)
  */
 int mpu_init(struct int_param_s *int_param)
 {
-    if(!twi_master_init())
+    int err = i2c_init();
+    if (err)
     {
-        LOG("twi_master_init() failed!!!\n");
+        log_e("i2c_init() failed!!!\n");
         return -1;
     }
 
