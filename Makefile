@@ -25,6 +25,9 @@ C_SOURCE_FILES += results_holder.c
 C_SOURCE_FILES += ml_math_func.c
 C_SOURCE_FILES += mlmath.c
 C_SOURCE_FILES += eMPL_outputs.c
+#C_SOURCE_FILES += log_stm32l.c # TODO keep/adapt ? (for _MLPrintLog())
+C_SOURCE_FILES += message_layer.c
+C_SOURCE_FILES += hal_outputs.c
 
 
 # startup files
@@ -40,6 +43,8 @@ SDK_INCLUDE_PATH = $(SDK_PATH)Include/
 MPU_PATH = lib/mpu9150/
 
 LIBRARIES += $(MPU_PATH)eMD6/core/mpl/libmpllib.a
+LIBRARIES += -lm
+
 SOFTDEVICE := lib/nrf51822/s110_nrf51822_6.0.0/s110_nrf51822_6.0.0_softdevice.hex
 
 OBJECT_DIRECTORY := obj
@@ -89,6 +94,8 @@ ASSEMBLER_SOURCE_PATHS = src/startup
 # MPU9150 Source Paths
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/eMPL/
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/mllite/
+C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/eMPL-hal/
+#C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/stm32L/ # TODO keep/adapt ?
 
 
 # nRF51822 Include Paths
@@ -105,15 +112,19 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/eMPL/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/include/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mllite/
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mpl
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/eMPL-hal
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mpl/
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/eMPL-hal/
+#INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/stm32L/ # TODO keep/adapt ?
 
 
 # Compiler flags
 CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
-CFLAGS += -DMPU9150
+CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
+CFLAGS += -DMPL_LOG_NDEBUG=0 # TODO !?
+CFLAGS += -Os
 #CFLAGS += -Wall# -Werror
+CFLAGS += -ffunction-sections -fdata-sections # split bin in little sections...
 
 # Linker flags
 CONFIG_PATH += config/
@@ -123,6 +134,8 @@ LDFLAGS += -L"$(GNU_INSTALL_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/armv6-m"
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
 LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs
 LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
+LDFLAGS += -Wl,--gc-sections # remove unused sections (separated thanks to the last CFLAGS)
+
 
 FLASH_START_ADDRESS = 0x14000
 

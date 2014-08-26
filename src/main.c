@@ -82,6 +82,7 @@ static struct platform_data_s compass_pdata = {
                      0, 0, -1}
 };
 
+unsigned char *mpl_key = (unsigned char*)"eMPL 5.1";
 
 static void tap_cb(unsigned char direction, unsigned char count)
 {
@@ -155,7 +156,7 @@ int sensor_fusion_init(void)
     if (err) {
         LOG("Could not initialize MPL.\n");
     }
-#if 1
+
     /* Compute 6-axis and 9-axis quaternions. */
     inv_enable_quaternion();
     inv_enable_9x_sensor_fusion();
@@ -312,7 +313,6 @@ int sensor_fusion_init(void)
     dmp_set_fifo_rate(DEFAULT_MPU_HZ);
     mpu_set_dmp_state(1);
     hal.dmp_on = 1;
-#endif
     return 0;
 }
 
