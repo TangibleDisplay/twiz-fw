@@ -25,7 +25,7 @@ C_SOURCE_FILES += results_holder.c
 C_SOURCE_FILES += ml_math_func.c
 C_SOURCE_FILES += mlmath.c
 C_SOURCE_FILES += eMPL_outputs.c
-#C_SOURCE_FILES += log_stm32l.c # TODO keep/adapt ? (for _MLPrintLog())
+C_SOURCE_FILES += log_stm32l.c
 C_SOURCE_FILES += message_layer.c
 C_SOURCE_FILES += hal_outputs.c
 
@@ -95,7 +95,7 @@ ASSEMBLER_SOURCE_PATHS = src/startup
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/eMPL/
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/mllite/
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/eMPL-hal/
-#C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/stm32L/ # TODO keep/adapt ?
+C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/stm32L/
 
 
 # nRF51822 Include Paths
@@ -114,7 +114,7 @@ INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/include/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mllite/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mpl/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/eMPL-hal/
-#INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/stm32L/ # TODO keep/adapt ?
+INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/stm32L/
 
 
 # Compiler flags
