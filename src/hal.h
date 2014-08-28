@@ -10,11 +10,20 @@
 
 #define USE_SIMPLE_UART true
 #if USE_SIMPLE_UART
+static void simple_uart_getstring(char *s) {
+    if (!s) return;
+    do { *s = simple_uart_get(); }
+    while ( *s++ );
+}
 #define uart_init() simple_uart_config(3,0,2,1,0) /*rts, tx, cts, rx, flow-ctrl*/
 #define LOG_STR(s)  simple_uart_putstring((const uint8_t *)(s))
+#define GET_STR(s)  simple_uart_getstring(s)
+#define GET_C       simple_uart_get
 #else // BLE_UART
 #define uart_init() /* TODO ?*/
 #define LOG_STR(s)  print(s)
+#define GET_STR(s)  get_str(s)
+#define GET_C       /* TODO ?*/
 #endif
 
 #define LOG(...)    { char s[99]; sprintf(s, __VA_ARGS__); LOG_STR(s); }

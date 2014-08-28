@@ -9,6 +9,7 @@
 #include "ble_error_log.h"
 #include "ble_debug_assert_handler.h"
 #include "hardware.h"
+#include "hal.h"
 
 #define DEVICE_NAME                     "BLE_UART"                                  /**< Name of device. Will be included in the advertising data. */
 
@@ -36,6 +37,22 @@ static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;
 static ble_nus_t                        m_nus;                                      /**< Structure to identify the Nordic UART Service. */
 
 static bool isConnected = false;
+
+static char rx_buffer[BLE_NUS_MAX_DATA_LEN + 1] = {0};
+static int rx_ready = 0;
+
+void get_str(char *s)
+{
+    if (!s) return;
+    memcpy(s, rx_buffer, BLE_NUS_MAX_DATA_LEN);
+    s[BLE_NUS_MAX_DATA_LEN] = '\0'; // security EOL
+    rx_ready = 0;
+}
+
+int rx_ready_num(void)
+{
+    return rx_ready;
+}
 
 void printChar(char c)
 {
@@ -148,10 +165,8 @@ void advertising_init(void)
  */
 void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
-    for (int i = 0; i < length; i++)
-    {
-        leds_blink(100);
-    }
+    rx_ready = min(BLE_NUS_MAX_DATA_LEN, length);
+    memcpy(rx_buffer, p_data, rx_ready);
 }
 
 /**@brief Function for initializing services that will be used by the application.
