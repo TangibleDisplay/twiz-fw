@@ -282,7 +282,7 @@ int sensor_fusion_init(void)
      * handle_input), but this algorithm can be enabled if the self-test can't
      * be executed in your application.
      */
-    inv_enable_in_use_auto_calibration(); // TODO ?
+    // inv_enable_in_use_auto_calibration(); // TODO ? save memory for the moment...
 
     /* Compass calibration algorithms. */
     inv_enable_vector_compass_cal();
@@ -292,7 +292,7 @@ int sensor_fusion_init(void)
      * enable this algorithm. It becomes useless after a good figure-eight is
      * detected, so we'll just leave it out to save memory.
      */
-    inv_enable_heading_from_gyro(); // TODO ?
+    // inv_enable_heading_from_gyro(); // TODO ? save memory for the moment...
 
     /* Allows use of the MPL APIs in read_from_mpl. */
     inv_enable_eMPL_outputs();
