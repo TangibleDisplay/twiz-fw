@@ -1014,6 +1014,7 @@ int main(void)
 
     uint32_t timestamp_ms;
 
+    sensor_fusion_init();
     sensor_fusion_loop(); // never returns TODO: adapt
 
     while(true)
