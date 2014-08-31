@@ -121,7 +121,7 @@ INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/stm32L/
 CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
-CFLAGS += -DMPL_LOG_NDEBUG=0 # TODO !?
+CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING # TODO !? (it doesn't seem to change much)
 CFLAGS += -Os
 #CFLAGS += -Wall# -Werror
 CFLAGS += -ffunction-sections -fdata-sections # split bin in little sections...

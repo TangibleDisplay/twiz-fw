@@ -85,14 +85,14 @@ void print(char* s)
 void printInt(uint32_t n)
 {
     char ret[12];
-    sprintf(ret, "%d", n);
+    //sprintf(ret, "%d", n);
     print(ret);
 }
 
 void printHex(uint8_t n)
 {
     char ret[2];
-    sprintf(ret, "%2x", n);
+    //sprintf(ret, "%2x", n);
     print(ret);
 }
 

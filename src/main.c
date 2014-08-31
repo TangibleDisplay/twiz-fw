@@ -994,28 +994,30 @@ void sensor_fusion_loop(void)
  */
 int main(void)
 {
+    uint32_t timestamp_ms;
+    bool flag0 = true;
+    bool err;
+
     // Initialize
     leds_init();
+    nrf_gpio_pin_set(LED_0);
     timers_init();
+
+#if 0
     ble_stack_init();
     gap_params_init();
     services_init();
     advertising_init();
     conn_params_init();
     sec_params_init();
-
+    advertising_start();
+#else
     uart_init();
     LOG("\nstart\n");
 
-    advertising_start();
-
-    bool flag0 = true;
-    bool err;
-
-    uint32_t timestamp_ms;
-
     sensor_fusion_init();
     sensor_fusion_loop(); // never returns TODO: adapt
+#endif
 
     while(true)
     {
@@ -1027,8 +1029,8 @@ int main(void)
                 print("Connected\n");
 
                 nrf_delay_ms(30); // TODO find why useful
-                err = sensor_fusion_init();
-                APP_ERROR_CHECK_BOOL(err);
+                // err = sensor_fusion_init();
+                // APP_ERROR_CHECK_BOOL(err);
 
                 nrf_gpio_pin_set(LED_0);
                 flag0 = false;

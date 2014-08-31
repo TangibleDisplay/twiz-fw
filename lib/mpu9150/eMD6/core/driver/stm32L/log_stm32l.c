@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 
@@ -58,6 +58,7 @@
  */
 int _MLPrintLog (int priority, const char* tag, const char* fmt, ...)
 {
+#if 0
     va_list args;
     int length, ii, i;
     char buf[BUF_SIZE], out[PACKET_LENGTH], this_length;
@@ -104,6 +105,7 @@ int _MLPrintLog (int priority, const char* tag, const char* fmt, ...)
 
 
     va_end(args);
+#endif
 
     return 0;
 }

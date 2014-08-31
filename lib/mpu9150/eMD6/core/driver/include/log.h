@@ -37,7 +37,7 @@
 #ifndef _LIBS_CUTILS_MPL_LOG_H
 #define _LIBS_CUTILS_MPL_LOG_H
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <stdarg.h>
 
 #ifdef ANDROID

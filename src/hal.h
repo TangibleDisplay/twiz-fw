@@ -4,7 +4,7 @@
 #include "nrf_delay.h"      // nrf_delay_ms()
 #include "hardware.h"       // get_ms()
 #include "mpu.h"            // i2c_read() & i2c_write()
-#include <stdlib.h>         // for sprintf()
+//#include <stdlib.h>         // for sprintf()
 #include "simple_uart.h"    // simple_uart_putstring()
 #include "ble_uart.h"       // TODO later: use print(), printInt() & printHex()
 
@@ -26,7 +26,7 @@ static void simple_uart_getstring(char *s) {
 #define GET_C       /* TODO ?*/
 #endif
 
-#define LOG(...)    { char s[99]; sprintf(s, __VA_ARGS__); LOG_STR(s); }
+#define LOG(...)    //{ char s[99]; sprintf(s, __VA_ARGS__); LOG_STR(s); }
                     /* s[81] should suffice but this litle margin can't hurt */
 
 #define log_e(...)  LOG(__VA_ARGS__)
