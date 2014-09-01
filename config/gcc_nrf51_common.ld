@@ -52,8 +52,8 @@ SECTIONS
 		KEEP(*(.Vectors))
 		*(.text*)
 
-		*(.init)
-		*(.fini)
+		KEEP(*(.init))
+		KEEP(*(.fini))
 
 		/* .ctors */
 		*crtbegin.o(.ctors)
