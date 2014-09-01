@@ -23,9 +23,12 @@
  */
 
 #include <string.h>
-
-#include "ch.h"
+#include <stddef.h>
 #include "memstreams.h"
+
+#define RDY_OK          0           /**< @brief Normal wakeup message.      */
+#define RDY_RESET       -2          /**< @brief Wakeup caused by a reset
+                                         condition.                         */
 
 /*===========================================================================*/
 /* Driver local definitions.                                                 */

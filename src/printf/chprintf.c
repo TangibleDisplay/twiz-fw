@@ -27,9 +27,35 @@
  * @{
  */
 
-#include "ch.h"
+#include <stddef.h>
+#include <stdbool.h>
 #include "chprintf.h"
 #include "memstreams.h"
+
+
+/**
+ * @brief   Sequential Stream blocking byte write.
+ * @details This function writes a byte value to a channel. If the channel
+ *          is not ready to accept data then the calling thread is suspended.
+ *
+ * @param[in] ip        pointer to a @p BaseChannel or derived class
+ * @param[in] b         the byte value to be written to the channel
+ *
+ * @return              The operation status.
+ * @retval Q_OK         if the operation succeeded.
+ * @retval Q_RESET      if an end-of-file condition has been met.
+ *
+ * @api
+ */
+#define chSequentialStreamPut(ip, b) ((ip)->vmt->put(ip, b))
+
+#if !defined(FALSE)
+#define FALSE                   0
+#endif
+#if !defined(TRUE)
+#define TRUE                    (!FALSE)
+#endif
+typedef bool bool_t; /**< Fast boolean type. */
 
 #define MAX_FILLER 11
 #define FLOAT_PRECISION 100000

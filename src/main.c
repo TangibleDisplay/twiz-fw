@@ -249,7 +249,7 @@ int sensor_fusion_init(void)
     } else {
         LOG("IMU init OK\n");
     }
-
+#if 0
     err = inv_init_mpl();
     if (err) {
         LOG("Could not initialize MPL.\n");
@@ -411,6 +411,7 @@ int sensor_fusion_init(void)
     dmp_set_fifo_rate(DEFAULT_MPU_HZ);
     mpu_set_dmp_state(1);
     hal.dmp_on = 1;
+#endif
     return 0;
 }
 
@@ -1016,6 +1017,10 @@ int main(void)
     LOG("\nstart\n");
 
     sensor_fusion_init();
+
+    for(;;)
+        leds_blink(100);
+
     sensor_fusion_loop(); // never returns TODO: adapt
 #endif
 

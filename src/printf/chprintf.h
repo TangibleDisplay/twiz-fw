@@ -26,11 +26,13 @@
 #define _CHPRINTF_H_
 
 #include <stdarg.h>
+#include <stddef.h>
+#include "memstreams.h"
 
 /**
  * @brief   Float type support.
  */
-#if !defined(CHPRINTF_USE_FLOAT) || defined(__DOXYGEN__)
+#if !defined(CHPRINTF_USE_FLOAT)
 #define CHPRINTF_USE_FLOAT          FALSE
 #endif
 
@@ -66,7 +68,7 @@ extern "C" {
  *
  * @api
  */
-static INLINE void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
+static inline void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
   va_list ap;
 
   va_start(ap, fmt);

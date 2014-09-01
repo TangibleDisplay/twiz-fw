@@ -13,6 +13,8 @@ C_SOURCE_FILES += softdevice_handler.c
 C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += app_timer.c
 C_SOURCE_FILES += twi_hw_master.c
+C_SOURCE_FILES += chprintf.c
+C_SOURCE_FILES += memstreams.c
 
 # MPU9150 Source
 C_SOURCE_FILES += inv_mpu.c
@@ -28,7 +30,6 @@ C_SOURCE_FILES += eMPL_outputs.c
 C_SOURCE_FILES += log_stm32l.c
 C_SOURCE_FILES += message_layer.c
 C_SOURCE_FILES += hal_outputs.c
-
 
 # startup files
 C_SOURCE_FILES += system_$(DEVICESERIES).c
@@ -83,6 +84,7 @@ JLINKGDBSERVER = JLinkGDBServer
 # nRF51822 Source Paths
 C_SOURCE_PATHS += src
 C_SOURCE_PATHS += src/startup
+C_SOURCE_PATHS += src/printf
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)nrf_delay
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)app_common
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)simple_uart
@@ -97,9 +99,9 @@ C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/mllite/
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/eMPL-hal/
 C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/stm32L/
 
-
 # nRF51822 Include Paths
 INCLUDEPATHS += -Isrc
+INCLUDEPATHS += -Isrc/printf
 INCLUDEPATHS += -I$(SDK_PATH)Include
 INCLUDEPATHS += -I$(SDK_PATH)Include/app_common
 INCLUDEPATHS += -I$(SDK_PATH)Include/sd_common

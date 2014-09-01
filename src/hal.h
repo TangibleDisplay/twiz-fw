@@ -4,7 +4,7 @@
 #include "nrf_delay.h"      // nrf_delay_ms()
 #include "hardware.h"       // get_ms()
 #include "mpu.h"            // i2c_read() & i2c_write()
-//#include <stdlib.h>         // for sprintf()
+#include <chprintf.h>       // for chsnprintf()
 #include "simple_uart.h"    // simple_uart_putstring()
 #include "ble_uart.h"       // TODO later: use print(), printInt() & printHex()
 
@@ -26,8 +26,8 @@ static void simple_uart_getstring(char *s) {
 #define GET_C       /* TODO ?*/
 #endif
 
-#define LOG(...)    //{ char s[99]; sprintf(s, __VA_ARGS__); LOG_STR(s); }
-                    /* s[81] should suffice but this litle margin can't hurt */
+#define LOG(...)    { char s[128]; chsnprintf(s, 128, __VA_ARGS__); LOG_STR(s); }
+                    /* TODO: test if 128 is enough once the fusion is finished */
 
 #define log_e(...)  LOG(__VA_ARGS__)
 #define log_i(...)  LOG(__VA_ARGS__)
