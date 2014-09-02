@@ -125,6 +125,7 @@ CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
 CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING # TODO !? (it doesn't seem to change much)
 CFLAGS += -Os
+CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
 #CFLAGS += -Wall# -Werror
 CFLAGS += -ffunction-sections -fdata-sections # split bin in little sections...
 
@@ -138,7 +139,7 @@ LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
 LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs
 LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
 LDFLAGS += -Wl,--gc-sections # remove unused sections (separated thanks to the last CFLAGS)
-
+LDFLAGS += --specs=nano.specs
 
 FLASH_START_ADDRESS = 0x14000
 
