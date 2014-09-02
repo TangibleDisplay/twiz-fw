@@ -1014,7 +1014,7 @@ int main(void)
     advertising_start();
 #else
     uart_init();
-    LOG("\nstart\n");
+    LOG("\nstart %f\n", 3.3);
 
     sensor_fusion_init();
 

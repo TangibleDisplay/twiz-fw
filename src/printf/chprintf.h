@@ -32,6 +32,7 @@
 /**
  * @brief   Float type support.
  */
+#define CHPRINTF_USE_FLOAT          1
 #if !defined(CHPRINTF_USE_FLOAT)
 #define CHPRINTF_USE_FLOAT          FALSE
 #endif
