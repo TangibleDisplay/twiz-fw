@@ -67,7 +67,7 @@ GNU_PREFIX := arm-none-eabi
 CC       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
 AS       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
 AR       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
-LD       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ld"
+LD       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
 NM       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-nm"
 OBJDUMP  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
 OBJCOPY  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
@@ -131,6 +131,7 @@ CFLAGS += -ffunction-sections -fdata-sections # split bin in little sections...
 # Linker flags
 CONFIG_PATH += config/
 LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110.ld
+LDFLAGS += -use-gold # use more efficient linker
 LDFLAGS += -L"$(GNU_INSTALL_ROOT)/arm-none-eabi/lib/armv6-m"
 LDFLAGS += -L"$(GNU_INSTALL_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/armv6-m"
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
