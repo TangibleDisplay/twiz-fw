@@ -249,7 +249,7 @@ int sensor_fusion_init(void)
     } else {
         LOG("IMU init OK\n");
     }
-#if 0
+#if 1
     err = inv_init_mpl();
     if (err) {
         LOG("Could not initialize MPL.\n");
@@ -1001,10 +1001,7 @@ int main(void)
 
     // Initialize
     leds_init();
-    nrf_gpio_pin_set(LED_0);
     timers_init();
-
-#if 0
     ble_stack_init();
     gap_params_init();
     services_init();
@@ -1012,17 +1009,11 @@ int main(void)
     conn_params_init();
     sec_params_init();
     advertising_start();
-#else
     uart_init();
     LOG("\nstart %f\n", 3.3);
 
     sensor_fusion_init();
-
-    for(;;)
-        leds_blink(100);
-
     sensor_fusion_loop(); // never returns TODO: adapt
-#endif
 
     while(true)
     {
@@ -1034,8 +1025,8 @@ int main(void)
                 print("Connected\n");
 
                 nrf_delay_ms(30); // TODO find why useful
-                // err = sensor_fusion_init();
-                // APP_ERROR_CHECK_BOOL(err);
+                err = sensor_fusion_init();
+                APP_ERROR_CHECK_BOOL(err);
 
                 nrf_gpio_pin_set(LED_0);
                 flag0 = false;
