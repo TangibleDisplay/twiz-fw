@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "nrf_soc.h"
 
 /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 #define DEAD_BEEF                       0xDEADBEEF

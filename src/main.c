@@ -1,5 +1,6 @@
 
 #include "timers.h"
+#include "leds.h"
 
 /**
  * @brief Function for application main entry.
