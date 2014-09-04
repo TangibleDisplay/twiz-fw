@@ -61,18 +61,17 @@ CPU := cortex-m0
 GDB_PORT_NUMBER := 2331
 
 # Toolchain
-GNU_INSTALL_ROOT := /usr
 GNU_VERSION := 4.8.3
 GNU_PREFIX := arm-none-eabi
-CC       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
-AS       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
-AR       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
-LD       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
-NM       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-nm"
-OBJDUMP  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
-OBJCOPY  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
-GDB       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gdb"
-CGDB            := "/usr/local/bin/cgdb"
+CC       		:= $(GNU_PREFIX)-gcc
+AS       		:= $(GNU_PREFIX)-as
+AR       		:= $(GNU_PREFIX)-ar -r
+LD       		:= $(GNU_PREFIX)-gcc
+NM       		:= $(GNU_PREFIX)-nm
+OBJDUMP  		:= $(GNU_PREFIX)-objdump
+OBJCOPY  		:= $(GNU_PREFIX)-objcopy
+GDB       		:= $(GNU_PREFIX)-gdb
+CGDB            := cgdb
 
 MK 				:= mkdir
 RM 				:= rm -rf
@@ -126,15 +125,12 @@ CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
 CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING # TODO !? (it doesn't seem to change much)
 CFLAGS += -Os
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
-#CFLAGS += -Wall# -Werror
+CFLAGS += -Wall #-Werror
 CFLAGS += -ffunction-sections -fdata-sections # split bin in little sections...
 
 # Linker flags
 CONFIG_PATH += config/
 LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110.ld
-LDFLAGS += -use-gold # use more efficient linker
-LDFLAGS += -L"$(GNU_INSTALL_ROOT)/arm-none-eabi/lib/armv6-m"
-LDFLAGS += -L"$(GNU_INSTALL_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/armv6-m"
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
 LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs
 LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
@@ -276,4 +272,3 @@ debug.jlink:
 	echo "Device nrf51822" > $(OUTPUT_BINARY_DIRECTORY)/debug.jlink
 
 .PHONY: flash flash-softdevice erase-all startdebug stopdebug
-
