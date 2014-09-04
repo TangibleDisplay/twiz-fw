@@ -108,7 +108,7 @@ CFLAGS += -g3 -MD -c
 CFLAGS += -mcpu=$(CPU) -mthumb -march=armv6-m -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
-CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING # TODO !? (it doesn't seem to change much)
+CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
 CFLAGS += -Wall -Werror -Wextra
 CFLAGS += -ffunction-sections -fdata-sections
@@ -230,12 +230,14 @@ erase-all: erase-all.jlink
 erase-all.jlink:
 	printf "device nrf51822\nw4 4001e504 2\nw4 4001e50c 1\nw4 4001e514 1\nr\nexit\n" > $(OUTPUT_PATH)erase-all.jlink
 
-startdebug: stopdebug $(ELF)
+startgdbserver: stopgdbserver $(ELF)
 	$(TERMINAL) "$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)"
 	sleep 1
+
+debug: startgdbserver $(ELF)
 	$(GDB) $(ELF)
 
-stopdebug:
-	-killall $(JLINKGDBSERVER)
+stopgdbserver:
+	-@killall $(JLINKGDBSERVER)
 
-.PHONY: flash flash-softdevice erase-all startdebug stopdebug
+.PHONY: flash flash-softdevice erase-all startgdbserver stopgdbserver debug
