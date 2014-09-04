@@ -1,35 +1,14 @@
 C_SOURCE_FILES += main.c
+C_SOURCE_FILES += leds.c
+C_SOURCE_FILES += timers.c
+C_SOURCE_FILES += helpers.c
 
 # nRF51822 Source
-C_SOURCE_FILES += hardware.c
-C_SOURCE_FILES += ble_uart.c
-C_SOURCE_FILES += ble_nus.c
-C_SOURCE_FILES += mpu.c
-C_SOURCE_FILES += nrf_delay.c
-C_SOURCE_FILES += ble_srv_common.c
-C_SOURCE_FILES += ble_advdata.c
-C_SOURCE_FILES += ble_conn_params.c
-C_SOURCE_FILES += softdevice_handler.c
 C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += app_timer.c
-C_SOURCE_FILES += twi_hw_master.c
-C_SOURCE_FILES += chprintf.c
-C_SOURCE_FILES += memstreams.c
+C_SOURCE_FILES += nrf_delay.c
 
 # MPU9150 Source
-C_SOURCE_FILES += inv_mpu.c
-C_SOURCE_FILES += inv_mpu_dmp_motion_driver.c
-C_SOURCE_FILES += mpl.c
-C_SOURCE_FILES += storage_manager.c
-C_SOURCE_FILES += start_manager.c
-C_SOURCE_FILES += data_builder.c
-C_SOURCE_FILES += results_holder.c
-C_SOURCE_FILES += ml_math_func.c
-C_SOURCE_FILES += mlmath.c
-C_SOURCE_FILES += eMPL_outputs.c
-C_SOURCE_FILES += log_stm32l.c
-C_SOURCE_FILES += message_layer.c
-C_SOURCE_FILES += hal_outputs.c
 
 # startup files
 C_SOURCE_FILES += system_$(DEVICESERIES).c
@@ -72,6 +51,7 @@ OBJDUMP  		:= $(GNU_PREFIX)-objdump
 OBJCOPY  		:= $(GNU_PREFIX)-objcopy
 GDB       		:= $(GNU_PREFIX)-gdb
 CGDB            := cgdb
+TERMINAL 		?= gnome-terminal -e
 
 MK 				:= mkdir
 RM 				:= rm -rf
@@ -169,7 +149,6 @@ clean:
 	$(RM) $(OBJECT_DIRECTORY)/*
 	$(RM) $(LISTING_DIRECTORY)/*
 	- $(RM) JLink.log
-	- $(RM) .gdbinit
 
 ## Program device
 #.PHONY: flash
@@ -221,7 +200,7 @@ flash: flash.jlink stopdebug $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
 	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
 
 flash.jlink:
-	echo "device nrf51822\nspeed 1000\nr\nloadbin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin, $(FLASH_START_ADDRESS)\nr\ng\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
+	printf "device nrf51822\nspeed 1000\nr\nloadbin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin, $(FLASH_START_ADDRESS)\nr\ng\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
 
 flash-softdevice: erase-all flash-softdevice.jlink stopdebug
 ifndef SOFTDEVICE
@@ -237,8 +216,8 @@ endif
 flash-softdevice.jlink:
 	# Do magic. Write to NVMC to enable erase, do erase all and erase UICR, reset, enable writing, load mainpart bin, load uicr bin. Reset.
 	# Resetting in between is needed to disable the protections.
-	echo "w4 4001e504 1\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/_mainpart.bin\" 0\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/_uicr.bin\" 0x10001000\nr\ng\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/flash-softdevice.jlink
-	#echo "w4 4001e504 1\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\" 0\nr\ng\nexit\n" > flash-softdevice.jlink
+	printf "w4 4001e504 1\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/_mainpart.bin\" 0\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/_uicr.bin\" 0x10001000\nr\ng\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/flash-softdevice.jlink
+	#printf "w4 4001e504 1\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\" 0\nr\ng\nexit\n" > flash-softdevice.jlink
 
 recover: recover.jlink erase-all.jlink pin-reset.jlink
 	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/recover.jlink
@@ -246,29 +225,23 @@ recover: recover.jlink erase-all.jlink pin-reset.jlink
 	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/pin-reset.jlink
 
 recover.jlink:
-	echo "si 0\nt0\nsleep 1\ntck1\nsleep 1\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\ntck0\nsleep 100\nsi 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/recover.jlink
+	printf "si 0\nt0\nsleep 1\ntck1\nsleep 1\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\ntck0\nsleep 100\nsi 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/recover.jlink
 
 pin-reset.jlink:
-	echo "device nrf51822\nw4 4001e504 2\nw4 40000544 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/pin-reset.jlink
+	printf "device nrf51822\nw4 4001e504 2\nw4 40000544 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/pin-reset.jlink
 
 erase-all: erase-all.jlink
 	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/erase-all.jlink
 
 erase-all.jlink:
-	echo "device nrf51822\nw4 4001e504 2\nw4 4001e50c 1\nw4 4001e514 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/erase-all.jlink
+	printf "device nrf51822\nw4 4001e504 2\nw4 4001e50c 1\nw4 4001e514 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/erase-all.jlink
 
-startdebug: stopdebug debug.jlink .gdbinit
-	$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER) &
+startdebug: stopdebug
+	$(TERMINAL) "$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)"
 	sleep 1
 	$(GDB) $(ELF)
 
 stopdebug:
 	-killall $(JLINKGDBSERVER)
-
-.gdbinit:
-	echo "target remote localhost:$(GDB_PORT_NUMBER)\nmonitor flash download = 1\nmonitor flash device = nrf51822\nbreak main\nmon reset\n" > .gdbinit
-
-debug.jlink:
-	echo "Device nrf51822" > $(OUTPUT_BINARY_DIRECTORY)/debug.jlink
 
 .PHONY: flash flash-softdevice erase-all startdebug stopdebug
