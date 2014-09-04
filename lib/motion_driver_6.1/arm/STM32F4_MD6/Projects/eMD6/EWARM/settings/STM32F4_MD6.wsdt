@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<Workspace>
+  <ConfigDictionary>
+    
+  <CurrentConfigs><Project>STM32F4_MD6/Debug</Project></CurrentConfigs></ConfigDictionary>
+  <Desktop>
+    <Static>
+      <Workspace>
+        <ColumnWidths>
+          
+          
+          
+          
+        <Column0>169</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+      </Workspace>
+    <Find-in-Files><ColumnWidth0>569</ColumnWidth0><ColumnWidth1>94</ColumnWidth1><ColumnWidth2>854</ColumnWidth2><ColumnWidth3>379</ColumnWidth3></Find-in-Files><Build><ColumnWidth0>19</ColumnWidth0><ColumnWidth1>1396</ColumnWidth1><ColumnWidth2>372</ColumnWidth2><ColumnWidth3>93</ColumnWidth3></Build><TerminalIO/></Static>
+    <Windows>
+      
+    <Wnd2>
+        <Tabs>
+          <Tab>
+            <Identity>TabID-25904-21422</Identity>
+            <TabName>Workspace</TabName>
+            <Factory>Workspace</Factory>
+            <Session>
+              
+            <NodeDict><ExpandedNode>STM32F4_MD6</ExpandedNode><ExpandedNode>STM32F4_MD6/DeviceSupport</ExpandedNode><ExpandedNode>STM32F4_MD6/DeviceSupport/inc</ExpandedNode><ExpandedNode>STM32F4_MD6/DeviceSupport/src</ExpandedNode><ExpandedNode>STM32F4_MD6/Peripherals</ExpandedNode><ExpandedNode>STM32F4_MD6/Peripherals/inc</ExpandedNode><ExpandedNode>STM32F4_MD6/Peripherals/src</ExpandedNode><ExpandedNode>STM32F4_MD6/StdPeriph_Driver</ExpandedNode><ExpandedNode>STM32F4_MD6/StdPeriph_Driver/inc</ExpandedNode><ExpandedNode>STM32F4_MD6/StdPeriph_Driver/src</ExpandedNode><ExpandedNode>STM32F4_MD6/User</ExpandedNode><ExpandedNode>STM32F4_MD6/User/inc</ExpandedNode><ExpandedNode>STM32F4_MD6/User/src</ExpandedNode><ExpandedNode>STM32F4_MD6/core</ExpandedNode><ExpandedNode>STM32F4_MD6/core/driver</ExpandedNode><ExpandedNode>STM32F4_MD6/core/driver/eMPL</ExpandedNode><ExpandedNode>STM32F4_MD6/core/driver/include</ExpandedNode><ExpandedNode>STM32F4_MD6/core/driver/stm32</ExpandedNode><ExpandedNode>STM32F4_MD6/core/eMPL-hal</ExpandedNode><ExpandedNode>STM32F4_MD6/core/mllite</ExpandedNode><ExpandedNode>STM32F4_MD6/core/mpl</ExpandedNode></NodeDict></Session>
+          </Tab>
+        </Tabs>
+        
+      <SelectedTab>0</SelectedTab></Wnd2><Wnd3><Tabs><Tab><Identity>TabID-7734-312</Identity><TabName>Find in Files</TabName><Factory>Find-in-Files</Factory><Session/></Tab><Tab><Identity>TabID-9015-3401</Identity><TabName>Build</TabName><Factory>Build</Factory><Session/></Tab></Tabs><SelectedTab>1</SelectedTab></Wnd3></Windows>
+    <Editor>
+      
+      
+      
+      
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\core\driver\eMPL\inv_mpu_dmp_motion_driver.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>1090</SelStart2><SelEnd2>1090</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\User\src\main.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>627</YPos2><SelStart2>20748</SelStart2><SelEnd2>20748</SelEnd2></Tab><ActiveTab>1</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Positions>
+      
+      
+      
+      
+      
+    <Top><Row0><Sizes><Toolbar-004B20C0><key>iaridepm.enu1</key></Toolbar-004B20C0></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>439</Bottom><Right>260</Right><x>-2</x><y>-2</y><xscreen>74</xscreen><yscreen>103</yscreen><sizeHorzCX>59011</sizeHorzCX><sizeHorzCY>151471</sizeHorzCY><sizeVertCX>208931</sizeVertCX><sizeVertCY>648529</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>196</Bottom><Right>1256</Right><x>-2</x><y>-2</y><xscreen>1258</xscreen><yscreen>198</yscreen><sizeHorzCX>1003190</sizeHorzCX><sizeHorzCY>291176</sizeHorzCY><sizeVertCX>59011</sizeVertCX><sizeVertCY>151471</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+  </Desktop>
+</Workspace>
+
+
