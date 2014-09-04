@@ -2,6 +2,7 @@ C_SOURCE_FILES += main.c
 C_SOURCE_FILES += leds.c
 C_SOURCE_FILES += timers.c
 C_SOURCE_FILES += helpers.c
+C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
@@ -110,7 +111,7 @@ CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
 CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
-CFLAGS += -Wall -Werror -Wextra
+CFLAGS += -Wall
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -Wno-unused-local-typedefs -Wno-old-style-declaration -Wno-unused-parameter
 
