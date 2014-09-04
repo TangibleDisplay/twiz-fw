@@ -1,4 +1,4 @@
-/* 
+/*
 Copyright (c) 2013, Nordic Semiconductor ASA
 All rights reserved.
 
@@ -28,8 +28,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* 
-NOTE: Template files (including this one) are application specific and therefore 
+/*
+NOTE: Template files (including this one) are application specific and therefore
 expected to be copied into the application project folder prior to its use!
 */
 
@@ -67,7 +67,7 @@ __HeapBase:
     .size __HeapBase, . - __HeapBase
 __HeapLimit:
     .size __HeapLimit, . - __HeapLimit
-    
+
     .section .Vectors
     .align 2
     .globl __Vectors
@@ -129,7 +129,7 @@ __Vectors:
 /* Reset Handler */
 
     .equ    NRF_POWER_RAMON_ADDRESS,            0x40000524
-    .equ    NRF_POWER_RAMON_RAMxON_ONMODE_Msk,  0x3  
+    .equ    NRF_POWER_RAMON_RAMxON_ONMODE_Msk,  0x3
 
     .text
     .thumb
@@ -148,7 +148,7 @@ Reset_Handler:
     STR     R2, [R0]
 
 /*     Loop to copy data from read only memory to RAM. The ranges
- *      of copy from/to are specified by following symbols evaluated in 
+ *      of copy from/to are specified by following symbols evaluated in
  *      linker script.
  *      __etext: End of code section, i.e., begin of data sections to copy from.
  *      __data_start__/__data_end__: RAM address range that data should be
@@ -167,7 +167,7 @@ Reset_Handler:
     str    r0, [r2,r3]
     bgt    .LC1
 .LC0:
-    
+
     LDR     R0, =SystemInit
     BLX     R0
     LDR     R0, =_start
@@ -259,4 +259,3 @@ Default_Handler:
 
 
   .end
-
