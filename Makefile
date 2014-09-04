@@ -3,6 +3,10 @@ C_SOURCE_FILES += leds.c
 C_SOURCE_FILES += timers.c
 C_SOURCE_FILES += helpers.c
 
+# Startup files
+C_SOURCE_FILES += system_$(DEVICESERIES).c
+ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
+
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += app_timer.c
@@ -10,14 +14,11 @@ C_SOURCE_FILES += nrf_delay.c
 
 # MPU9150 Source
 
-# startup files
-C_SOURCE_FILES += system_$(DEVICESERIES).c
-ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
-
 # nRF51822 Paths
 SDK_PATH = lib/nrf51822/sdk_nrf51822_5.2.0/
 SDK_SOURCE_PATH = $(SDK_PATH)Source/
 SDK_INCLUDE_PATH = $(SDK_PATH)Include/
+TEMPLATE_PATH = $(SDK_SOURCE_PATH)templates/
 
 # MPU9150 Paths
 MPU_PATH = lib/mpu9150/
@@ -40,19 +41,17 @@ CPU := cortex-m0
 GDB_PORT_NUMBER := 2331
 
 # Toolchain
-GNU_VERSION := 4.8.3
-GNU_PREFIX := arm-none-eabi
-CC       		:= $(GNU_PREFIX)-gcc
-AS       		:= $(GNU_PREFIX)-as
-AR       		:= $(GNU_PREFIX)-ar -r
-LD       		:= $(GNU_PREFIX)-gcc
-NM       		:= $(GNU_PREFIX)-nm
-OBJDUMP  		:= $(GNU_PREFIX)-objdump
-OBJCOPY  		:= $(GNU_PREFIX)-objcopy
-GDB       		:= $(GNU_PREFIX)-gdb
-CGDB            := cgdb
-TERMINAL 		?= gnome-terminal -e
+GNU_PREFIX 		:= arm-none-eabi
+AS       		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-as
+CC       		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-gcc
+LD       		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-gcc
+NM       		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-nm
+OBJDUMP  		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-objdump
+OBJCOPY  		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-objcopy
+SIZE	  		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-size
+GDB       		:= $(TOOLCHAIN_PATH)$(GNU_PREFIX)-gdb
 
+TERMINAL 		?= gnome-terminal -e
 MK 				:= mkdir
 RM 				:= rm -rf
 
@@ -60,25 +59,18 @@ RM 				:= rm -rf
 JLINK = -JLinkExe
 JLINKGDBSERVER = JLinkGDBServer
 
-# nRF51822 Source Paths
-C_SOURCE_PATHS += src
-C_SOURCE_PATHS += src/startup
-C_SOURCE_PATHS += src/printf
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH)nrf_delay
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH)app_common
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH)simple_uart
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH)sd_common
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble/ble_services
-ASSEMBLER_SOURCE_PATHS = src/startup
+# Application source PATH
+SOURCE_PATHS += src
+SOURCE_PATHS += src/printf
 
-# MPU9150 Source Paths
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/eMPL/
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/mllite/
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/eMPL-hal/
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/stm32L/
+# nRF51822 source PATH
+SOURCE_PATHS += $(SDK_SOURCE_PATH) $(TEMPLATE_PATH) $(TEMPLATE_PATH)gcc/ $(wildcard $(SDK_SOURCE_PATH)*/)
+SOURCE_PATHS += $(SDK_SOURCE_PATH)ble/ble_services/
 
-# nRF51822 Include Paths
+# MPU9150 source paths
+SOURCE_PATHS += $(wildcard $(MPU_PATH)eMD6/core*/)
+
+# nRF51822 include paths
 INCLUDEPATHS += -Isrc
 INCLUDEPATHS += -Isrc/printf
 INCLUDEPATHS += -I$(SDK_PATH)Include
@@ -89,7 +81,7 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/ble
 INCLUDEPATHS += -I$(SDK_PATH)Include/ble/ble_services
 INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 
-# MPU9150 Include Paths
+# MPU9150 include paths
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/eMPL/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/include/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mllite/
@@ -97,25 +89,34 @@ INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mpl/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/eMPL-hal/
 INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/stm32L/
 
+LIBRARY_INCLUDES = $(addprefix -I,$(LIBRARY_PATHS))
+
+# CPU flags
+CPUFLAGS = -mthumb -mcpu=cortex-m0 -march=armv6-m -D$(DEVICE)
 
 # Compiler flags
-CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) --std=gnu99
+CFLAGS += -I.
+CFLAGS += -Os -g
+CFLAGS += $(CPUFLAGS)
+CFLAGS += --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
-CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING # TODO !? (it doesn't seem to change much)
-CFLAGS += -Os
-CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
-CFLAGS += -Wall #-Werror
-CFLAGS += -ffunction-sections -fdata-sections # split bin in little sections...
+CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING
+CFLAGS += -Wall -Wextra -Werror
+CFLAGS += -Wno-old-style-declaration -Wno-unused-parameter -Wno-unused-local-typedefs
+CFLAGS += -ffunction-sections -fdata-sections
+CFLAGS += -flto -fno-builtin
+
 
 # Linker flags
 CONFIG_PATH += config/
 LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110.ld
-LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
-LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs
-LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
-LDFLAGS += -Wl,--gc-sections # remove unused sections (separated thanks to the last CFLAGS)
+
+LDFLAGS += $(CPUFLAGS)
+LDFLAGS += -Wl,--gc-sections
 LDFLAGS += --specs=nano.specs
+LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
+LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
 
 FLASH_START_ADDRESS = 0x14000
 
@@ -134,8 +135,9 @@ C_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(C_SOURCE_FILENAMES:.c=.o) )
 ASSEMBLER_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(ASSEMBLER_SOURCE_FILENAMES:.s=.o) )
 
 # Set source lookup paths
-vpath %.c $(C_SOURCE_PATHS)
-vpath %.s $(ASSEMBLER_SOURCE_PATHS)
+VPATH = $(SOURCE_PATHS)
+#vpath %.c $(C_SOURCE_PATHS)
+#vpath %.s $(ASSEMBLER_SOURCE_PATHS)
 
 # Include automatically previously generated dependencies
 -include $(addprefix $(OBJECT_DIRECTORY)/, $(COBJS:.o=.d))
