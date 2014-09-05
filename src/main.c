@@ -3,7 +3,6 @@
 
 #include "nordic_common.h"
 #include "softdevice_handler.h"
-#include "app_gpiote.h"
 #include "timers.h"
 #include "leds.h"
 #include "uart.h"
@@ -14,9 +13,6 @@
  */
 int main(void)
 {
-    // Init GPIOTE
-    APP_GPIOTE_INIT(4);
-
     // Init SD so that timers have a clock reference, and to be ablr to call SD functions.
     // Must be done first !
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_SYNTH_250_PPM, false);
@@ -30,7 +26,7 @@ int main(void)
     // Init timers
     timers_init();
 
-
+    // Main loop
     while(1) {
         leds_blink(500);
         static uint32_t t;

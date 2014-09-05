@@ -9,7 +9,7 @@
 #include "nordic_common.h"
 #include "app_uart.h"
 
-void uart_evt_handler(app_uart_evt_t * p_app_uart_event)
+static void uart_evt_handler(app_uart_evt_t * p_app_uart_event)
 {
     UNUSED_PARAMETER(p_app_uart_event);
 }
@@ -30,12 +30,25 @@ void uart_init()
     APP_ERROR_CHECK(err_code);
 }
 
+int putchar(int c)
+{
+    while (app_uart_put(c) != NRF_SUCCESS);
+    return 0;
+}
+
+
 #else
 
 #include "simple_uart.h"
 void uart_init()
 {
     simple_uart_config(UART_RTS_PIN, UART_TX_PIN, UART_CTS_PIN, UART_RX_PIN, false);
+}
+
+int putchar(int c)
+{
+    simple_uart_put(c);
+    return 0;
 }
 
 #endif
