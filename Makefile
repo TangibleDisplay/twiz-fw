@@ -241,6 +241,6 @@ debug: $(ELF) startgdbserver
 	$(GDB) $(ELF)
 
 stopgdbserver:
-	-@killall $(JLINKGDBSERVER)
+	@pidof JLinkGDBServer > /dev/null && killall $(JLINKGDBSERVER) || true
 
 .PHONY: flash flash-softdevice erase-all startgdbserver stopgdbserver debug
