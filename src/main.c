@@ -34,7 +34,6 @@ int main(void)
     timers_init();
 
     // Init UART
-    APP_GPIOTE_INIT(1);
     app_uart_comm_params_t uart_params = {
         .rx_pin_no = 1,
         .tx_pin_no = 0,
