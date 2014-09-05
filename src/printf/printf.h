@@ -34,7 +34,7 @@
 
 #include <stdarg.h> /* for va_list */
 #include <stddef.h> /* for size_t */
-#include "simple_uart.h"
+#include "app_uart.h"
 
 extern int printf( const char *, ... );
 extern int sprintf( char *, const char *, ... );
@@ -44,7 +44,7 @@ extern int vprintf( const char *, va_list );
 extern int vsprintf( char *, const char *, va_list );
 extern int vsnprintf( char *, size_t, const char *, va_list );
 
-#define putchar simple_uart_put
+#define putchar(c) do {while (app_uart_put(c) != NRF_SUCCESS);} while(0)
 
 #endif /* PRINTF_H */
 

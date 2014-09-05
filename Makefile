@@ -6,8 +6,10 @@ C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
 C_SOURCE_FILES += softdevice_handler.c
 
 # nRF51822 Source
-C_SOURCE_FILES += simple_uart.c
+C_SOURCE_FILES += app_fifo.c
+C_SOURCE_FILES += app_uart_fifo.c
 C_SOURCE_FILES += app_timer.c
+C_SOURCE_FILES += app_gpiote.c
 C_SOURCE_FILES += nrf_delay.c
 
 # MPU9150 Source
@@ -192,13 +194,13 @@ $(HEX): $(ELF)
 -include $(C_OBJECTS:.o=.d)
 
 ## Program device
-flash: flash.jlink stopdebug $(BIN)
+flash: flash.jlink stopgdbserver $(BIN)
 	$(JLINK) $(OUTPUT_PATH)flash.jlink
 
 flash.jlink:
 	printf "device nrf51822\nspeed 1000\nr\nloadbin $(BIN), $(FLASH_START_ADDRESS)\nr\ng\nexit\n" > $(OUTPUT_PATH)flash.jlink
 
-flash-softdevice: erase-all flash-softdevice.jlink stopdebug
+flash-softdevice: erase-all flash-softdevice.jlink stopgdbserver
 ifndef SOFTDEVICE
 	$(error "You need to set the SOFTDEVICE command-line parameter to a path (without spaces) to the softdevice hex-file")
 endif
