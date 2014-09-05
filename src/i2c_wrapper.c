@@ -1,6 +1,7 @@
 #include "twi_master.h"
 #include "i2c_wrapper.h"
 #include "boards.h"
+#include <string.h>
 
 // HAL for invensense:
 
@@ -11,13 +12,8 @@ int i2c_init(void)
 
 int i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t const *data)
 {
-    bool transfer_succeeded;
     devAddr <<= 1;
 
-#if 0 // TODO: FIND WHY IT FAILS! (Compass not found.)
-    transfer_succeeded  = twi_master_transfer(devAddr, &regAddr, 1, TWI_ISSUE_STOP);
-    transfer_succeeded &= twi_master_transfer(devAddr, data, dataLength, TWI_ISSUE_STOP);
-#else
     const int bytes_num = 1 + dataLength;
 	uint8_t buffer[bytes_num];
 	buffer[0] = regAddr;
@@ -25,10 +21,10 @@ int i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t cons
     for (int i = 0; i < dataLength; i++) // TODO: hack twi_master_write to avoid this !?
         buffer[i+1] = data[i];
 
-    transfer_succeeded = twi_master_transfer(devAddr, buffer, bytes_num, TWI_ISSUE_STOP);
-#endif
+    //memcpy(buffer+1, data, dataLength);
 
-    return !transfer_succeeded; // invensense expects an error code: 0 = OK, error otherwise
+    // invensense expects an error code: 0 = OK, error otherwise
+    return !twi_master_transfer(devAddr, buffer, bytes_num, TWI_ISSUE_STOP);
 }
 
 int i2c_read(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t *data)
