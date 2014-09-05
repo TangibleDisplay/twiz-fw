@@ -1,8 +1,7 @@
 #include "leds.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
-
-#define LED_0 13
+#include "boards.h"
 
 void leds_init(void)
 {

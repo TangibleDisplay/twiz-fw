@@ -2,10 +2,12 @@ C_SOURCE_FILES += main.c
 C_SOURCE_FILES += leds.c
 C_SOURCE_FILES += timers.c
 C_SOURCE_FILES += helpers.c
+C_SOURCE_FILES += uart.c
 C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
 C_SOURCE_FILES += softdevice_handler.c
 
 # nRF51822 Source
+C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += app_fifo.c
 C_SOURCE_FILES += app_uart_fifo.c
 C_SOURCE_FILES += app_timer.c
@@ -113,6 +115,7 @@ CFLAGS += -mcpu=$(CPU) -mthumb -march=armv6-m -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
 CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING
+CFLAGS += -DUART_IRQ
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
 CFLAGS += -Wall
 CFLAGS += -ffunction-sections -fdata-sections
