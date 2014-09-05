@@ -13,7 +13,7 @@
 #include "twi_master.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "hardware.h"
+#include "boards.h"
 #include "nrf.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"

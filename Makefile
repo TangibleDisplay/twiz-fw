@@ -4,7 +4,8 @@ C_SOURCE_FILES += timers.c
 C_SOURCE_FILES += helpers.c
 C_SOURCE_FILES += uart.c
 C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
-C_SOURCE_FILES += softdevice_handler.c
+C_SOURCE_FILES += i2c_wrapper.c
+C_SOURCE_FILES += twi_hw_master_sd.c
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
@@ -13,6 +14,7 @@ C_SOURCE_FILES += app_uart_fifo.c
 C_SOURCE_FILES += app_timer.c
 C_SOURCE_FILES += app_gpiote.c
 C_SOURCE_FILES += nrf_delay.c
+C_SOURCE_FILES += softdevice_handler.c
 
 # MPU9150 Source
 

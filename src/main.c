@@ -7,6 +7,7 @@
 #include "leds.h"
 #include "uart.h"
 #include "printf.h"
+#include "i2c_wrapper.h"
 
 /**
  * @brief Function for application main entry.
@@ -25,6 +26,9 @@ int main(void)
 
     // Init timers
     timers_init();
+
+    // Init TWI
+    i2c_init();
 
     // Main loop
     while(1) {
