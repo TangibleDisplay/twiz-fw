@@ -235,7 +235,7 @@ erase-all.jlink:
 	printf "device nrf51822\nw4 4001e504 2\nw4 4001e50c 1\nw4 4001e514 1\nr\nexit\n" > $(OUTPUT_PATH)erase-all.jlink
 
 startgdbserver:
-	@pidof JLinkGDBServer > /dev/null || { $(TERMINAL) "$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)" ; sleep 1 ; }
+	@pidof JLinkGDBServer > /dev/null || { $(TERMINAL) "$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)" & sleep 1 ; }
 
 debug: $(ELF) startgdbserver
 	$(GDB) $(ELF)
