@@ -17,11 +17,7 @@ int i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t cons
     const int bytes_num = 1 + dataLength;
 	uint8_t buffer[bytes_num];
 	buffer[0] = regAddr;
-
-    for (int i = 0; i < dataLength; i++) // TODO: hack twi_master_write to avoid this !?
-        buffer[i+1] = data[i];
-
-    //memcpy(buffer+1, data, dataLength);
+    memcpy(buffer+1, data, dataLength);
 
     // invensense expects an error code: 0 = OK, error otherwise
     return !twi_master_transfer(devAddr, buffer, bytes_num, TWI_ISSUE_STOP);
