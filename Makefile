@@ -3,6 +3,7 @@ C_SOURCE_FILES += leds.c
 C_SOURCE_FILES += timers.c
 C_SOURCE_FILES += helpers.c
 C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
+C_SOURCE_FILES += softdevice_handler.c
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
