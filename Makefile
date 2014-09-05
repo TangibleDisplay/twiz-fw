@@ -238,8 +238,8 @@ startgdbserver: stopgdbserver $(ELF)
 	$(TERMINAL) "$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)"
 	sleep 1
 
-debug: startgdbserver $(ELF)
-	$(GDB) $(ELF)
+debug: $(ELF)
+	ps gaux | grep JLinkGDB | grep -v grep && $(GDB) $(ELF)
 
 stopgdbserver:
 	-@killall $(JLINKGDBSERVER)
