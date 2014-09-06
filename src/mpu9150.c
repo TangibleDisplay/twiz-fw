@@ -279,23 +279,32 @@ static void read_gyro_data(int16_t * destination)
 
 static void read_mag_data(int16_t * destination)
 {
-    uint8_t rawData[6];  // x/y/z gyro register data stored here
-    // toggle enable data read from magnetometer, no continuous read mode!
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
-    nrf_delay_ms(10);
-    // Wait for magnetometer data ready bit to be set
-    while(i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST1) != 0x01) ;
-    // Only accept a new magnetometer data read if there are no sensor overflow or data read errors
-    if(i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST2) & 0x0C) {
-        printf("Mag read error\r\n");
+    static bool running = false;
+    static uint8_t rawData[6];  // x/y/z gyro register data stored here
+
+    if (running) {
+        // If there is a data available
+        if (i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST1) & 0x01) {
+            // If there is no overflow
+            if((i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST2) & 0x0C)==0) {
+                // Read the six raw data registers sequentially into data array
+                i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
+                // Turn the MSB and LSB into a signed 16-bit value
+                destination[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;
+                destination[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;
+                destination[2] = ((int16_t)rawData[5] << 8) | rawData[4] ;
+            }
+            // Launch a new acquisition
+            i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
+            return;
+        }
         return;
     }
-    // Read the six raw data registers sequentially into data array
-    i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
-    // Turn the MSB and LSB into a signed 16-bit value
-    destination[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;
-    destination[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;
-    destination[2] = ((int16_t)rawData[5] << 8) | rawData[4] ;
+    else {
+        // Else launch the first acquisition
+        i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
+        running = true;
+    }
 }
 
 static void ak8975a_init(float * destination)
@@ -808,8 +817,7 @@ void mpu9150_mainloop()
 #endif
 
     // Calibrate accel and gyro MPU9150
-    // XXX FIXME : calibrate magnetometer
-    //mpu9150_calibrate(gyroBias, accelBias);
+    mpu9150_calibrate(gyroBias, accelBias);
     printf("x gyro bias = %f\n\r", gyroBias[0]);
     printf("y gyro bias = %f\n\r", gyroBias[1]);
     printf("z gyro bias = %f\n\r", gyroBias[2]);
@@ -818,7 +826,7 @@ void mpu9150_mainloop()
     printf("z accel bias = %f\n\r", accelBias[2]);
     printf("\r\n");
 
-    // Go on !
+    // OK for MPU9150
     printf("MPU9150 initialized for active data mode....\n\r");
 
     // Check if magnometer is online too
@@ -832,7 +840,8 @@ void mpu9150_mainloop()
         }
     printf("AK8975A is online...\n\r");
 
-    // Initialize device for active mode read of magnetometer
+    // Calibrate magnetometer
+    // XXX FIXME : write a real calibration routine for hard iron
     ak8975a_init(magCalibration);
     printf("AK8975 initialized for active data mode....\n\r");
 
@@ -840,7 +849,7 @@ void mpu9150_mainloop()
         uint16_t data[3];
         read_mag_data(data);
         for (int j=0; j<3; j++)
-            printf("%02x ", data[j]);
+            printf("%04x ", data[j]);
         printf("\r\n");
 
     }
