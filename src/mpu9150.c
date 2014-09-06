@@ -314,6 +314,17 @@ static void ak8975a_init(float * destination)
 }
 
 
+static void ak8975a_calibrate(float * destination)
+{
+    // Calibrating for hard iron : for some times, user is asked to move the device in
+    // all directions. We record the min / max values, then compute the halfsum which
+    // will be our offset.
+
+    // XXX FIXME : to do later !
+
+    UNUSED_PARAMETER(destination);
+}
+
 static void mpu9150_reset() {
     // Write a one to bit 7 reset bit; toggle reset device
     i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x80);
