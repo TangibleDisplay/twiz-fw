@@ -280,26 +280,44 @@ static void read_gyro_data(int16_t * destination)
 static void read_mag_data(int16_t * destination)
 {
     uint8_t rawData[6];  // x/y/z gyro register data stored here
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01); // toggle enable data read from magnetometer, no continuous read mode!
+    // toggle enable data read from magnetometer, no continuous read mode!
+    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
     nrf_delay_ms(10);
-    // Only accept a new magnetometer data read if the data ready bit is set and
-    // if there are no sensor overflow or data read errors
-    if(i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST1) & 0x01) { // wait for magnetometer data ready bit to be set
-        i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
-        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;  // Turn the MSB and LSB into a signed 16-bit value
-        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;
-        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4] ;
+    // Wait for magnetometer data ready bit to be set
+    while(i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST1) != 0x01) ;
+    // Only accept a new magnetometer data read if there are no sensor overflow or data read errors
+    if(i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST2) & 0x0C) {
+        printf("Mag read error\r\n");
+        return;
     }
+    // Read the six raw data registers sequentially into data array
+    i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
+    // Turn the MSB and LSB into a signed 16-bit value
+    destination[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;
+    destination[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;
+    destination[2] = ((int16_t)rawData[5] << 8) | rawData[4] ;
 }
 
 static void ak8975a_init(float * destination)
 {
     uint8_t rawData[3];  // x/y/z gyro register data stored here
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00); // Power down
+    // Power down
+    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
+    nrf_delay_ms(1);
+    // Enter Fuse ROM access mode
+    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x0F);
     nrf_delay_ms(10);
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x0F); // Enter Fuse ROM access mode
-    nrf_delay_ms(10);
-    i2c_read_bytes(AK8975A_ADDRESS, AK8975A_ASAX, 3, &rawData[0]);  // Read the x-, y-, and z-axis calibration values
+    // Read the x-, y-, and z-axis calibration values
+    i2c_read_bytes(AK8975A_ADDRESS, AK8975A_ASAX, 3, rawData);
+    // Back to power down mode
+    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
+
+#if 1
+    for (int j=0; j<3; j++)
+        printf("%02x ", rawData[j]);
+    printf("\r\n");
+#endif
+
     destination[0] =  (float)(rawData[0] - 128)/256.0f + 1.0f; // Return x-axis sensitivity adjustment values
     destination[1] =  (float)(rawData[1] - 128)/256.0f + 1.0f;
     destination[2] =  (float)(rawData[2] - 128)/256.0f + 1.0f;
@@ -791,7 +809,7 @@ void mpu9150_mainloop()
 
     // Calibrate accel and gyro MPU9150
     // XXX FIXME : calibrate magnetometer
-    mpu9150_calibrate(gyroBias, accelBias);
+    //mpu9150_calibrate(gyroBias, accelBias);
     printf("x gyro bias = %f\n\r", gyroBias[0]);
     printf("y gyro bias = %f\n\r", gyroBias[1]);
     printf("z gyro bias = %f\n\r", gyroBias[2]);
@@ -803,8 +821,28 @@ void mpu9150_mainloop()
     // Go on !
     printf("MPU9150 initialized for active data mode....\n\r");
 
+    // Check if magnometer is online too
+    whoami = i2c_read_byte(AK8975A_ADDRESS, WHO_AM_I_AK8975A);
+    printf("AK8975A : I am 0x%x\n\r", whoami);
+
+    if (whoami != 0x48) {
+            // WHO_AM_I should be 0x48
+            printf("ERROR : I SHOULD BE 0x48\n\r");
+            return;
+        }
+    printf("AK8975A is online...\n\r");
+
     // Initialize device for active mode read of magnetometer
     ak8975a_init(magCalibration);
     printf("AK8975 initialized for active data mode....\n\r");
+
+    while(1) {
+        uint16_t data[3];
+        read_mag_data(data);
+        for (int j=0; j<3; j++)
+            printf("%02x ", data[j]);
+        printf("\r\n");
+
+    }
 
 }
