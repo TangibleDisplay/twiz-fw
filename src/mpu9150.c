@@ -169,6 +169,7 @@
 static uint8_t Ascale = AFS_2G;     // AFS_2G, AFS_4G, AFS_8G, AFS_16G
 static uint8_t Gscale = GFS_250DPS; // GFS_250DPS, GFS_500DPS, GFS_1000DPS, GFS_2000DPS
 static float aRes, gRes, mRes;      // scale resolutions per LSB for the sensors
+static calibrated = false;
 
 // Pin definitions
 // XXX FIXME int intPin = 12;  // These can be changed, 2 and 3 are the Arduinos ext int pins
@@ -311,27 +312,37 @@ static int16_t read_temp_data()
     return ((int16_t)rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a 16-bit value
 }
 
-void mpu9150_reset() {
-    // reset device
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x80); // Write a one to bit 7 reset bit; toggle reset device
-    nrf_delay_ms(100);
+static void mpu9150_reset() {
+    // Write a one to bit 7 reset bit; toggle reset device
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x80);
+    while(i2c_read_byte(MPU9150_ADDRESS, PWR_MGMT_1) & 0x80) ;
+    nrf_delay_ms(200);
 }
 
 void mpu9150_init()
 {
-    // Initialize MPU9150 device
-    // wake up device
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x00); // Clear sleep mode bit (6), enable all sensors
-    nrf_delay_ms(100); // Delay 100 ms for PLL to get established on x-axis gyro; should check for PLL ready interrupt
+    // Take MPU9150 out of sleep
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x00);
+    // Delay 100ms for gyro startup
+    nrf_delay_ms(100);
 
-    // get stable time source
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x01);  // Set clock source to be PLL with x-axis gyroscope reference, bits 2:0 = 001
+    // Set clock source to be PLL with x-axis gyroscope reference, bits 2:0 = 001
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x01);
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_2, 0x00);
+    nrf_delay_ms(100);
+
+    // Disable I2C master mode, disable FIFO
+    i2c_write_byte(MPU9150_ADDRESS, I2C_MST_CTRL, 0x00);
+    i2c_write_byte(MPU9150_ADDRESS, FIFO_EN, 0x00);
+    // Reset sensors PATH and registers and FIFO
+    i2c_write_byte(MPU9150_ADDRESS, USER_CTRL, 0x5);
+    while(i2c_read_byte(MPU9150_ADDRESS, USER_CTRL) & 0x05) ;
 
     // Configure Gyro and Accelerometer
     // Disable FSYNC and set accelerometer and gyro bandwidth to 44 and 42 Hz, respectively;
     // DLPF_CFG = bits 2:0 = 010; this sets the sample rate at 1 kHz for both
     // Maximum delay is 4.9 ms which is just over a 200 Hz maximum rate
-    i2c_write_byte(MPU9150_ADDRESS, CONFIG, 0x03);
+    i2c_write_byte(MPU9150_ADDRESS, CONFIG, 0x01); // XXXX FIXME : 0x03
 
     // Set sample rate = gyroscope output rate/(1 + SMPLRT_DIV)
     i2c_write_byte(MPU9150_ADDRESS, SMPLRT_DIV, 0x04);  // Use a 200 Hz rate; the same rate set in CONFIG above
@@ -353,7 +364,7 @@ void mpu9150_init()
     // but all these rates are further reduced by a factor of 5 to 200 Hz because of the SMPLRT_DIV setting
 
     // Configure Interrupts and Bypass Enable
-    // Set interrupt pin active high, push-pull, and clear on read of INT_STATUS,
+    // Set interrupt pin active high, push-pull, latched and clear on read of INT_STATUS,
     // enable I2C_BYPASS_EN so additional chips can join the I2C bus and all can be controlled
     // by the TWI as master
     i2c_write_byte(MPU9150_ADDRESS, INT_PIN_CFG, 0x22);
@@ -364,65 +375,51 @@ void mpu9150_init()
 // of the at-rest readings and then loads the resulting offsets into accelerometer and gyro bias registers.
 void mpu9150_calibrate(float * dest1, float * dest2)
 {
-    uint8_t data[12]; // data array to hold accelerometer and gyro x, y, z, data
-    int ii, packet_count, fifo_count;
+    static uint8_t data[14]; // data array to hold accelerometer and gyro x, y, z, data
+    int ii, meas_count;
     int32_t gyro_bias[3] = {0, 0, 0}, accel_bias[3] = {0, 0, 0};
+    static int32_t gyro_temp[3];
+    static int32_t accel_temp[3];
 
-    // reset device, reset all registers, clear gyro and accelerometer bias registers
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x80); // Write a one to bit 7 reset bit; toggle reset device
-    nrf_delay_ms(100);
-
-    // get stable time source
-    // Set clock source to be PLL with x-axis gyroscope reference, bits 2:0 = 001
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x01);
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_2, 0x00);
-    nrf_delay_ms(200);
-
-    // Configure device for bias calculation
-    i2c_write_byte(MPU9150_ADDRESS, INT_ENABLE, 0x00);   // Disable all interrupts
-    i2c_write_byte(MPU9150_ADDRESS, FIFO_EN, 0x00);      // Disable FIFO
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x00);   // Turn on internal clock source
-    i2c_write_byte(MPU9150_ADDRESS, I2C_MST_CTRL, 0x00); // Disable I2C master
-    i2c_write_byte(MPU9150_ADDRESS, USER_CTRL, 0x00);    // Disable FIFO and I2C master modes
-    i2c_write_byte(MPU9150_ADDRESS, USER_CTRL, 0x0C);    // Reset FIFO and DMP
-    nrf_delay_ms(150);
+    // If already calibrated, then reset chip to reset HW cal register to factory trim
+    if(calibrated) {
+        mpu9150_reset();
+        mpu9150_init();
+    }
+    calibrated = true;
 
     // Configure MPU9150 gyro and accelerometer for bias calculation
-    i2c_write_byte(MPU9150_ADDRESS, CONFIG, 0x01);      // Set low-pass filter to 188 Hz
-    i2c_write_byte(MPU9150_ADDRESS, SMPLRT_DIV, 0x00);  // Set sample rate to 1 kHz
     i2c_write_byte(MPU9150_ADDRESS, GYRO_CONFIG, 0x00);  // Set gyro full-scale to 250 degrees per second, maximum sensitivity
     i2c_write_byte(MPU9150_ADDRESS, ACCEL_CONFIG, 0x00); // Set accelerometer full-scale to 2 g, maximum sensitivity
+    nrf_delay_ms(200);
 
     uint16_t  gyrosensitivity  = 131;   // = 131 LSB/degrees/sec
     uint16_t  accelsensitivity = 16384;  // = 16384 LSB/g
 
-    // Configure FIFO to capture accelerometer and gyro data for bias calculation
-    printf("start in 0.5 s\r\n");
-    nrf_delay_ms(500);
-    i2c_write_byte(MPU9150_ADDRESS, USER_CTRL, 0x40);   // Enable FIFO
-    i2c_write_byte(MPU9150_ADDRESS, FIFO_EN, 0x78);     // Enable gyro and accelerometer sensors for FIFO (max size 1024 bytes in MPU9150)
-    nrf_delay_ms(50); // accumulate 80 samples in 60 milliseconds = 960 bytes. Be carefull : if FIFO overflows, data is incorrect !
+    // Accumulate 200 measures each 5 ms (200Hz sample rate)
+    meas_count = 200;
+    for (int i = 0; i<meas_count; i++) {
+        nrf_delay_ms(5);
 
-    // At end of sample accumulation, turn off FIFO sensor read
-    i2c_write_byte(MPU9150_ADDRESS, FIFO_EN, 0x00);        // Disable gyro and accelerometer sensors for FIFO
-    i2c_read_bytes(MPU9150_ADDRESS, FIFO_COUNTH, 2, data); // read FIFO sample count
-    fifo_count = ((uint16_t)data[0] << 8) | data[1];
-    packet_count = fifo_count/12;// How many sets of full gyro and accelerometer data for averaging
-    printf("Packet_count = %d\r\n", packet_count);
+        // Burst read to ensure that accel, temp and gyro measurements are taken at the same time
+        i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
 
-    for (ii = 0; ii < packet_count; ii++) {
-        int32_t accel_temp[3] = {0, 0, 0}, gyro_temp[3] = {0, 0, 0};
-        i2c_read_bytes(MPU9150_ADDRESS, FIFO_R_W, 12, data); // read data for averaging
-        accel_temp[0] = (int16_t) (((int16_t)data[0] << 8) | data[1]  ) ;  // Form signed 16-bit integer for each sample in FIFO
+        // Debug
+#if 1
+        for (int j=0; j<14; j=j+2)
+            printf("%02x%02x ", data[j], data[j+1]);
+        printf("\r\n");
+#endif
+        // Form signed 16-bit integer for each data
+        accel_temp[0] = (int16_t) (((int16_t)data[0] << 8) | data[1]  ) ;
         accel_temp[1] = (int16_t) (((int16_t)data[2] << 8) | data[3]  ) ;
         accel_temp[2] = (int16_t) (((int16_t)data[4] << 8) | data[5]  ) ;
-        gyro_temp[0]  = (int16_t) (((int16_t)data[6] << 8) | data[7]  ) ;
-        gyro_temp[1]  = (int16_t) (((int16_t)data[8] << 8) | data[9]  ) ;
-        gyro_temp[2]  = (int16_t) (((int16_t)data[10] << 8) | data[11]) ;
+        gyro_temp[0]  = (int16_t) (((int16_t)data[8] << 8) | data[9]  ) ;
+        gyro_temp[1]  = (int16_t) (((int16_t)data[10] << 8) | data[11]  ) ;
+        gyro_temp[2]  = (int16_t) (((int16_t)data[12] << 8) | data[13]) ;
 
-        printf("gt0 = %d, gt1 = %d, gt2 = %d\r\n", gyro_temp[0], gyro_temp[1], gyro_temp[2]);
-
-        accel_bias[0] += (int32_t) accel_temp[0]; // Sum individual signed 16-bit biases to get accumulated signed 32-bit biases
+        // Sum individual signed 16-bit biases to get accumulated signed 32-bit biases
+        accel_bias[0] += (int32_t) accel_temp[0];
         accel_bias[1] += (int32_t) accel_temp[1];
         accel_bias[2] += (int32_t) accel_temp[2];
         gyro_bias[0]  += (int32_t) gyro_temp[0];
@@ -430,14 +427,16 @@ void mpu9150_calibrate(float * dest1, float * dest2)
         gyro_bias[2]  += (int32_t) gyro_temp[2];
 
     }
-    accel_bias[0] /= (int32_t) packet_count; // Normalize sums to get average count biases
-    accel_bias[1] /= (int32_t) packet_count;
-    accel_bias[2] /= (int32_t) packet_count;
-    gyro_bias[0]  /= (int32_t) packet_count;
-    gyro_bias[1]  /= (int32_t) packet_count;
-    gyro_bias[2]  /= (int32_t) packet_count;
+    // Normalize sums to get average count biases
+    accel_bias[0] /= (int32_t) meas_count;
+    accel_bias[1] /= (int32_t) meas_count;
+    accel_bias[2] /= (int32_t) meas_count;
+    gyro_bias[0]  /= (int32_t) meas_count;
+    gyro_bias[1]  /= (int32_t) meas_count;
+    gyro_bias[2]  /= (int32_t) meas_count;
 
-    if(accel_bias[2] > 0L) {accel_bias[2] -= (int32_t) accelsensitivity;}  // Remove gravity from the z-axis accelerometer bias calculation
+    // Remove gravity from the z-axis accelerometer bias calculation
+    if(accel_bias[2] > 0L) {accel_bias[2] -= (int32_t) accelsensitivity;}
     else {accel_bias[2] += (int32_t) accelsensitivity;}
 
     // Construct the gyro biases for push to the hardware gyro bias registers, which are reset to zero upon device startup
@@ -456,7 +455,8 @@ void mpu9150_calibrate(float * dest1, float * dest2)
     i2c_write_byte(MPU9150_ADDRESS, ZG_OFFS_USRH, data[4]);
     i2c_write_byte(MPU9150_ADDRESS, ZG_OFFS_USRL, data[5]);
 
-    dest1[0] = (float) gyro_bias[0]/(float) gyrosensitivity; // construct gyro bias in deg/s for later manual subtraction
+    // Construct gyro bias in deg/s for later manual subtraction
+    dest1[0] = (float) gyro_bias[0]/(float) gyrosensitivity;
     dest1[1] = (float) gyro_bias[1]/(float) gyrosensitivity;
     dest1[2] = (float) gyro_bias[2]/(float) gyrosensitivity;
 
@@ -467,19 +467,19 @@ void mpu9150_calibrate(float * dest1, float * dest2)
     // the accelerometer biases calculated above must be divided by 8.
 
     int32_t accel_bias_reg[3] = {0, 0, 0}; // A place to hold the factory accelerometer trim biases
-    i2c_read_bytes(MPU9150_ADDRESS, XA_OFFSET_H, 2, &data[0]); // Read factory accelerometer trim values
+    i2c_read_bytes(MPU9150_ADDRESS, XA_OFFSET_H, 2, data); // Read factory accelerometer trim values
     accel_bias_reg[0] = (int16_t) ((int16_t)data[0] << 8) | data[1];
-    i2c_read_bytes(MPU9150_ADDRESS, YA_OFFSET_H, 2, &data[0]);
+    i2c_read_bytes(MPU9150_ADDRESS, YA_OFFSET_H, 2, data);
     accel_bias_reg[1] = (int16_t) ((int16_t)data[0] << 8) | data[1];
-    i2c_read_bytes(MPU9150_ADDRESS, ZA_OFFSET_H, 2, &data[0]);
+    i2c_read_bytes(MPU9150_ADDRESS, ZA_OFFSET_H, 2, data);
     accel_bias_reg[2] = (int16_t) ((int16_t)data[0] << 8) | data[1];
 
     uint32_t mask = 1uL; // Define mask for temperature compensation bit 0 of lower byte of accelerometer bias registers
     uint8_t mask_bit[3] = {0, 0, 0}; // Define array to hold mask bit for each accelerometer bias axis
 
-    for(ii = 0; ii < 3; ii++) {
-        if(accel_bias_reg[ii] & mask) mask_bit[ii] = 0x01; // If temperature compensation bit is set, record that fact in mask_bit
-    }
+    for(ii = 0; ii < 3; ii++)
+        // If temperature compensation bit is set, record that fact in mask_bit
+        mask_bit[ii] = accel_bias_reg[ii] & mask;
 
     // Construct total accelerometer bias, including calculated average accelerometer bias from above
     accel_bias_reg[0] -= (accel_bias[0]/8); // Subtract calculated averaged accelerometer bias scaled to 2048 LSB/g (16 g full scale)
@@ -499,12 +499,12 @@ void mpu9150_calibrate(float * dest1, float * dest2)
     // Apparently this is not working for the acceleration biases in the MPU-9250
     // Are we handling the temperature correction bit properly?
     // Push accelerometer biases to hardware registers
-    i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_H, data[0]);
-    i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_L_TC, data[1]);
-    i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_H, data[2]);
-    i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_L_TC, data[3]);
-    i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_H, data[4]);
-    i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_L_TC, data[5]);
+      i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_H, data[0]);
+      i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_L_TC, data[1]);
+      i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_H, data[2]);
+      i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_L_TC, data[3]);
+      i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_H, data[4]);
+      i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_L_TC, data[5]);
 
     // Output scaled accelerometer biases for manual subtraction in the main program
     dest2[0] = (float)accel_bias[0]/(float)accelsensitivity;
@@ -759,6 +759,7 @@ void mahony_quaternion_update(float ax, float ay, float az, float gx, float gy, 
 void mpu9150_mainloop()
 {
     // Check that MPU9150 is reponding
+    mpu9150_reset();
     uint8_t whoami = i2c_read_byte(MPU9150_ADDRESS, WHO_AM_I_MPU9150);
     printf("MPU9150 : I am 0x%x\n\r", whoami);
 
@@ -769,10 +770,12 @@ void mpu9150_mainloop()
         }
     printf("MPU9150 is online...\n\r");
 
+    // Init MPU
+    mpu9150_init();
+
+#ifdef MPU9150_SELFTEST
     // Run self tests
     printf("Running MPU9150 self tests...\r\n");
-    nrf_delay_ms(1000);
-
     static float SelfTest[6];
     mpu9150_selftest(SelfTest);
     printf("x-axis self test: acceleration trim within %2.2f%% of factory value\n\r", SelfTest[0]);
@@ -781,11 +784,13 @@ void mpu9150_mainloop()
     printf("x-axis self test: gyration trim within %2.2f%% of factory value\n\r", SelfTest[3]);
     printf("y-axis self test: gyration trim within %2.2f%% of factory value\n\r", SelfTest[4]);
     printf("z-axis self test: gyration trim within %2.2f%% of factory value\n\r", SelfTest[5]);
-    nrf_delay_ms(1000);
-    // Reset registers to default in preparation for device calibration
-    mpu9150_reset();
 
-    // Calibrate MPU9150
+    // Re-init MPU
+    mpu9150_init();
+#endif
+
+    // Calibrate accel and gyro MPU9150
+    // XXX FIXME : calibrate magnetometer
     mpu9150_calibrate(gyroBias, accelBias);
     printf("x gyro bias = %f\n\r", gyroBias[0]);
     printf("y gyro bias = %f\n\r", gyroBias[1]);
@@ -793,10 +798,9 @@ void mpu9150_mainloop()
     printf("x accel bias = %f\n\r", accelBias[0]);
     printf("y accel bias = %f\n\r", accelBias[1]);
     printf("z accel bias = %f\n\r", accelBias[2]);
-    nrf_delay_ms(1000);
+    printf("\r\n");
 
-    // Initialize device for active mode read of acclerometer, gyroscope, and temperature
-    mpu9150_init();
+    // Go on !
     printf("MPU9150 initialized for active data mode....\n\r");
 
     // Initialize device for active mode read of magnetometer
