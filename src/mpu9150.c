@@ -258,26 +258,7 @@ static void getAres() {
         }
 }
 
-
-static void read_accel_data(int16_t * destination)
-{
-    uint8_t rawData[6];  // x/y/z accel register data stored here
-    i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers into data array
-    destination[0] = (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
-    destination[1] = (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
-    destination[2] = (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
-}
-
-static void read_gyro_data(int16_t * destination)
-{
-    uint8_t rawData[6];  // x/y/z gyro register data stored here
-    i2c_read_bytes(MPU9150_ADDRESS, GYRO_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
-    destination[0] = (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
-    destination[1] = (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
-    destination[2] = (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
-}
-
-static void read_mag_data(int16_t * destination)
+static void ak8975a_read_data(int16_t * destination)
 {
     static bool running = false;
     static uint8_t rawData[6];  // x/y/z gyro register data stored here
@@ -321,7 +302,7 @@ static void ak8975a_init(float * destination)
     // Back to power down mode
     i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
 
-#if 1
+#if 0
     for (int j=0; j<3; j++)
         printf("%02x ", rawData[j]);
     printf("\r\n");
@@ -332,12 +313,6 @@ static void ak8975a_init(float * destination)
     destination[2] =  (float)(rawData[2] - 128)/256.0f + 1.0f;
 }
 
-static int16_t read_temp_data()
-{
-    uint8_t rawData[2];  // x/y/z gyro register data stored here
-    i2c_read_bytes(MPU9150_ADDRESS, TEMP_OUT_H, 2, &rawData[0]);  // Read the two raw data registers sequentially into data array
-    return ((int16_t)rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a 16-bit value
-}
 
 static void mpu9150_reset() {
     // Write a one to bit 7 reset bit; toggle reset device
@@ -392,7 +367,7 @@ void mpu9150_init()
 
     // Configure Interrupts and Bypass Enable
     // Set interrupt pin active high, push-pull, latched and clear on read of INT_STATUS,
-    // enable I2C_BYPASS_EN so additional chips can join the I2C bus and all can be controlled
+    // Enable I2C_BYPASS_EN so magnetometer can join the I2C bus and can be controlled
     // by the TWI as master
     i2c_write_byte(MPU9150_ADDRESS, INT_PIN_CFG, 0x22);
     i2c_write_byte(MPU9150_ADDRESS, INT_ENABLE, 0x01);  // Enable data ready (bit 0) interrupt
@@ -407,6 +382,8 @@ void mpu9150_calibrate(float * dest1, float * dest2)
     int32_t gyro_bias[3] = {0, 0, 0}, accel_bias[3] = {0, 0, 0};
     static int32_t gyro_temp[3];
     static int32_t accel_temp[3];
+
+    printf("Calibrating MPU9150. Please don't move !\r\n");
 
     // If already calibrated, then reset chip to reset HW cal register to factory trim
     if(calibrated) {
@@ -432,7 +409,7 @@ void mpu9150_calibrate(float * dest1, float * dest2)
         i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
 
         // Debug
-#if 1
+#if 0
         for (int j=0; j<14; j=j+2)
             printf("%02x%02x ", data[j], data[j+1]);
         printf("\r\n");
@@ -523,20 +500,20 @@ void mpu9150_calibrate(float * dest1, float * dest2)
     data[5] = (accel_bias_reg[2])      & 0xFF;
     data[5] = data[5] | mask_bit[2]; // preserve temperature compensation bit when writing back to accelerometer bias registers
 
-    // Apparently this is not working for the acceleration biases in the MPU-9250
-    // Are we handling the temperature correction bit properly?
     // Push accelerometer biases to hardware registers
-      i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_H, data[0]);
-      i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_L_TC, data[1]);
-      i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_H, data[2]);
-      i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_L_TC, data[3]);
-      i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_H, data[4]);
-      i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_L_TC, data[5]);
+    i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_H, data[0]);
+    i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_L_TC, data[1]);
+    i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_H, data[2]);
+    i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_L_TC, data[3]);
+    i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_H, data[4]);
+    i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_L_TC, data[5]);
 
     // Output scaled accelerometer biases for manual subtraction in the main program
     dest2[0] = (float)accel_bias[0]/(float)accelsensitivity;
     dest2[1] = (float)accel_bias[1]/(float)accelsensitivity;
     dest2[2] = (float)accel_bias[2]/(float)accelsensitivity;
+
+    printf("Calibrating MPU9150 done.\r\n");
 }
 
 
@@ -572,17 +549,24 @@ void mpu9150_selftest(float * destination)
     factoryTrim[4] =  (-25.0f*131.0f)*(pow( 1.046f , (selfTest[4] - 1.0f) ));             // FT[Yg] factory trim calculation
     factoryTrim[5] =  ( 25.0f*131.0f)*(pow( 1.046f , (selfTest[5] - 1.0f) ));             // FT[Zg] factory trim calculation
 
-    //  Output self-test results and factory trim calculation if desired
-    //  Serial.println(selfTest[0]); Serial.println(selfTest[1]); Serial.println(selfTest[2]);
-    //  Serial.println(selfTest[3]); Serial.println(selfTest[4]); Serial.println(selfTest[5]);
-    //  Serial.println(factoryTrim[0]); Serial.println(factoryTrim[1]); Serial.println(factoryTrim[2]);
-    //  Serial.println(factoryTrim[3]); Serial.println(factoryTrim[4]); Serial.println(factoryTrim[5]);
-
     // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
     // To get to percent, must multiply by 100 and subtract result from 100
     for (int i = 0; i < 6; i++) {
         destination[i] = 100.0f + 100.0f*(selfTest[i] - factoryTrim[i])/factoryTrim[i]; // Report percent differences
     }
+}
+
+// Read accel, temps and gyro values.
+static void mpu9150_read_data(int16_t * values)
+{
+    static uint8_t data[14];
+
+    // Burst read all sensors to ensure the same timestamp for everybody
+    i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
+
+    // Convert each 2 byte into signed 16bit values
+    for(int i=0; i<7; i++)
+        values[i] = (int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
 }
 
 
@@ -791,10 +775,10 @@ void mpu9150_mainloop()
     printf("MPU9150 : I am 0x%x\n\r", whoami);
 
     if (whoami != 0x68) {
-            // WHO_AM_I should be 0x68
-            printf("ERROR : I SHOULD BE 0x68\n\r");
-            return;
-        }
+        // WHO_AM_I should be 0x68
+        printf("ERROR : I SHOULD BE 0x68\n\r");
+        return;
+    }
     printf("MPU9150 is online...\n\r");
 
     // Init MPU
@@ -834,10 +818,10 @@ void mpu9150_mainloop()
     printf("AK8975A : I am 0x%x\n\r", whoami);
 
     if (whoami != 0x48) {
-            // WHO_AM_I should be 0x48
-            printf("ERROR : I SHOULD BE 0x48\n\r");
-            return;
-        }
+        // WHO_AM_I should be 0x48
+        printf("ERROR : I SHOULD BE 0x48\n\r");
+        return;
+    }
     printf("AK8975A is online...\n\r");
 
     // Calibrate magnetometer
@@ -847,7 +831,7 @@ void mpu9150_mainloop()
 
     while(1) {
         uint16_t data[3];
-        read_mag_data(data);
+        ak8975a_read_data(data);
         for (int j=0; j<3; j++)
             printf("%04x ", data[j]);
         printf("\r\n");
