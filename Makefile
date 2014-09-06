@@ -4,8 +4,9 @@ C_SOURCE_FILES += timers.c
 C_SOURCE_FILES += helpers.c
 C_SOURCE_FILES += uart.c
 C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
-C_SOURCE_FILES += i2c_wrapper.c
 C_SOURCE_FILES += twi_hw_master_sd.c
+C_SOURCE_FILES += i2c_wrapper.c
+C_SOURCE_FILES += mpu9150.c
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
@@ -16,8 +17,6 @@ C_SOURCE_FILES += app_gpiote.c
 C_SOURCE_FILES += nrf_delay.c
 C_SOURCE_FILES += softdevice_handler.c
 
-# MPU9150 Source
-
 # startup files
 C_SOURCE_FILES += system_$(DEVICESERIES).c
 ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
@@ -27,10 +26,6 @@ SDK_PATH = lib/nrf51822/sdk_nrf51822_5.2.0/
 SDK_SOURCE_PATH = $(SDK_PATH)Source/
 SDK_INCLUDE_PATH = $(SDK_PATH)Include/
 
-# MPU9150 Paths
-MPU_PATH = lib/mpu9150/
-
-LIBRARIES += $(MPU_PATH)eMD6/core/mpl/libmpllib.a
 LIBRARIES += -lm
 
 SOFTDEVICE := lib/nrf51822/s110_nrf51822_6.0.0/s110_nrf51822_6.0.0_softdevice.hex
@@ -84,12 +79,6 @@ C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble/ble_services
 ASSEMBLER_SOURCE_PATHS = src/startup
 
-# MPU9150 Source Paths
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/eMPL/
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/mllite/
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/eMPL-hal/
-C_SOURCE_PATHS += $(MPU_PATH)eMD6/core/driver/stm32L/
-
 # nRF51822 Include Paths
 INCLUDEPATHS += -Isrc
 INCLUDEPATHS += -Isrc/printf
@@ -101,22 +90,11 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/ble
 INCLUDEPATHS += -I$(SDK_PATH)Include/ble/ble_services
 INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 
-# MPU9150 Include Paths
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/eMPL/
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/include/
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mllite/
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/mpl/
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/eMPL-hal/
-INCLUDEPATHS += -I$(MPU_PATH)eMD6/core/driver/stm32L/
-
-
 # Compiler flags
 CFLAGS += -Os
 CFLAGS += -g3 -MD -c
 CFLAGS += -mcpu=$(CPU) -mthumb -march=armv6-m -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
-CFLAGS += -DMPU9150 -DEMPL -DUSE_DMP
-CFLAGS += -DMPL_LOG_NDEBUG=1 -DNDEBUG -DREMOVE_LOGGING
 CFLAGS += -DUART_IRQ
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
 CFLAGS += -Wall
