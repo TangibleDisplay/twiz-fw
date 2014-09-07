@@ -2,6 +2,11 @@ target remote :2331
 monitor flash download = 1
 monitor flash device = nrf51822
 
+layout split
+layout asm
+layout regs
+focus cmd
+
 define flash
   load
   monitor reset
