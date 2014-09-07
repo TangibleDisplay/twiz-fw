@@ -160,7 +160,7 @@ $(OBJECT_DIRECTORY)%.o: %.c | $(BUILD_DIRECTORIES)
 $(OBJECT_DIRECTORY)%.o: %.s | $(BUILD_DIRECTORIES)
 	$(CC) $(ASFLAGS) $(INCLUDEPATHS) -c -o $@ $<
 
-## Link C and assembler objects to an .out file
+## Link C and assembler objects to an .elf file
 $(ELF): $(C_OBJECTS) $(ASSEMBLER_OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBRARIES) -o $@
 	$(SIZE) $@
@@ -169,40 +169,37 @@ $(ELF): $(C_OBJECTS) $(ASSEMBLER_OBJECTS)
 $(BIN): $(ELF)
 	$(OBJCOPY) -O binary $< $@
 
-## Create binary .hex file from the .out file
+## Create binary .hex file from the .elf file
 $(HEX): $(ELF)
 	$(OBJCOPY) -O ihex $(ELF) $@
 
 # Include automatically previously generated dependencies
 -include $(C_OBJECTS:.o=.d)
 
+#########################################################################################################
 ## Program device
-flash: flash.jlink stopgdbserver $(BIN)
-	$(JLINK) $(OUTPUT_PATH)flash.jlink
 
-flash.jlink:
-	printf "device nrf51822\nspeed 1000\nr\nloadbin $(BIN), $(FLASH_START_ADDRESS)\nr\ng\nexit\n" > $(OUTPUT_PATH)flash.jlink
+SOFTDEVICE_ELF = ${OUTPUT_PATH}${shell basename ${SOFTDEVICE:.hex=.elf}}
 
-flash-softdevice: erase-all flash-softdevice.jlink stopgdbserver
-ifndef SOFTDEVICE
-	$(error "You need to set the SOFTDEVICE command-line parameter to a path (without spaces) to the softdevice hex-file")
-endif
+${SOFTDEVICE_ELF}: ${SOFTDEVICE}
+	mkdir -p ${shell dirname ${SOFTDEVICE_ELF}}
+	${OBJCOPY} -Iihex -Oelf32-littlearm ${SOFTDEVICE} ${SOFTDEVICE_ELF}
 
-	# Convert from hex to binary. Split original hex in two to avoid huge (>250 MB) binary file with just 0s.
-	$(OBJCOPY) -Iihex -Obinary --remove-section .sec3 $(SOFTDEVICE) $(OUTPUT_PATH)_mainpart.bin
-	$(OBJCOPY) -Iihex -Obinary --remove-section .sec1 --remove-section .sec2 $(SOFTDEVICE) $(OUTPUT_PATH)_uicr.bin
+flash-all: ${SOFTDEVICE_ELF} ${ELF} startgdbserver
+	${GDB} -ex "source scripts/flash.gdb" -ex "flash-all ${SOFTDEVICE_ELF} ${ELF}" -ex "set confirm off" -ex "quit"
 
-	$(JLINK) $(OUTPUT_PATH)flash-softdevice.jlink
+flash: ${ELF} startgdbserver
+	$(GDB) -ex "source scripts/flash.gdb" -ex "flash ${ELF}" -ex "set confirm off" -ex "quit"
 
-flash-softdevice.jlink:
-	# Do magic. Write to NVMC to enable erase, do erase all and erase UICR, reset, enable writing, load mainpart bin, load uicr bin. Reset.
-	# Resetting in between is needed to disable the protections.
-	printf "w4 4001e504 1\nloadbin \"$(OUTPUT_PATH)_mainpart.bin\" 0\nloadbin \"$(OUTPUT_PATH)_uicr.bin\" 0x10001000\nr\ng\nexit\n" > $(OUTPUT_PATH)flash-softdevice.jlink
-	#printf "w4 4001e504 1\nloadbin \"$(OUTPUT_PATH)softdevice.bin\" 0\nr\ng\nexit\n" > flash-softdevice.jlink
+erase-all: startgdbserver
+	$(GDB) -ex "source scripts/flash.gdb" -ex "erase-all" -ex "set confirm off" -ex "quit"
+
+#########################################################################################################
+# Resurrect device - TODO: switch to gdb script too
 
 recover: recover.jlink erase-all.jlink pin-reset.jlink
 	$(JLINK) $(OUTPUT_PATH)recover.jlink
-	$(JLINK) $(OUTPUT_PATH)erase-all.jlink
+	$(MAKE) erase-all
 	$(JLINK) $(OUTPUT_PATH)pin-reset.jlink
 
 recover.jlink:
@@ -211,21 +208,17 @@ recover.jlink:
 pin-reset.jlink:
 	printf "device nrf51822\nw4 4001e504 2\nw4 40000544 1\nr\nexit\n" > $(OUTPUT_PATH)pin-reset.jlink
 
-erase-all: erase-all.jlink
-	$(JLINK) $(OUTPUT_PATH)erase-all.jlink
-
-erase-all.jlink:
-	printf "device nrf51822\nw4 4001e504 2\nw4 4001e50c 1\nw4 4001e514 1\nr\nexit\n" > $(OUTPUT_PATH)erase-all.jlink
-
+#########################################################################################################
+# Debug device
 
 startgdbserver_here:
-	$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)
+	@pidof JLinkGDBServer > /dev/null || $(JLINKGDBSERVER) -if swd -speed 1000 -port $(GDB_PORT_NUMBER)
 
 startgdbserver:
-	@pidof JLinkGDBServer > /dev/null || { $(TERMINAL) "$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER)" & sleep 1 ; }
+	@pidof JLinkGDBServer > /dev/null || { $(TERMINAL) "$(JLINKGDBSERVER) -if swd -speed 1000 -port $(GDB_PORT_NUMBER)" & sleep 1 ; }
 
 debug: $(ELF) startgdbserver
-	$(GDB) $(ELF)
+	$(GDB) -ex "source scripts/flash.gdb" -ex "split" $(ELF)
 
 stopgdbserver:
 	@pidof JLinkGDBServer > /dev/null && killall $(JLINKGDBSERVER) || true
