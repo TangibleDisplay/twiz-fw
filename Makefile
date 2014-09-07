@@ -12,7 +12,6 @@ C_SOURCE_FILES += mpu9150.c
 C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += app_fifo.c
 C_SOURCE_FILES += app_uart_fifo.c
-C_SOURCE_FILES += app_timer.c
 C_SOURCE_FILES += app_gpiote.c
 C_SOURCE_FILES += nrf_delay.c
 C_SOURCE_FILES += softdevice_handler.c

@@ -1,6 +1,6 @@
 #include "leds.h"
 #include "nrf_gpio.h"
-#include "nrf_delay.h"
+#include "timers.h"
 #include "boards.h"
 
 void leds_init(void)
@@ -12,7 +12,7 @@ void leds_init(void)
 void leds_blink(uint16_t ms)
 {
     nrf_gpio_pin_set(LED_0);
-    nrf_delay_ms(ms);
+    nrf_timer_delay_ms(ms);
     nrf_gpio_pin_clear(LED_0);
-    nrf_delay_ms(ms);
+    nrf_timer_delay_ms(ms);
 }

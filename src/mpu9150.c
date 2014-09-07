@@ -169,7 +169,7 @@
 static uint8_t Ascale = AFS_2G;     // AFS_2G, AFS_4G, AFS_8G, AFS_16G
 static uint8_t Gscale = GFS_250DPS; // GFS_250DPS, GFS_500DPS, GFS_1000DPS, GFS_2000DPS
 static float aRes, gRes, mRes;      // scale resolutions per LSB for the sensors
-static calibrated = false;
+static bool calibrated = false;
 
 // Pin definitions
 // XXX FIXME int intPin = 12;  // These can be changed, 2 and 3 are the Arduinos ext int pins
@@ -215,7 +215,7 @@ static float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 // vector to hold integral error for Mahony method
 static float eInt[3] = {0.0f, 0.0f, 0.0f};
 
-static void getGres() {
+static void setGres() {
     switch (Gscale)
         {
             // Possible gyro scales (and their register bit settings) are:
@@ -237,7 +237,7 @@ static void getGres() {
 }
 
 
-static void getAres() {
+static void setAres() {
     switch (Ascale)
         {
             // Possible accelerometer scales (and their register bit settings) are:
@@ -840,13 +840,150 @@ void mpu9150_mainloop()
     ak8975a_init(magCalibration);
     printf("AK8975 initialized for active data mode....\n\r");
 
-    while(1) {
-        uint16_t data[3];
-        ak8975a_read_data(data);
-        for (int j=0; j<3; j++)
-            printf("%04x ", data[j]);
-        printf("\r\n");
+    // Set accel and gyro sensitivity
+    setAres();
+    setGres();
+    // Conversion from 1229 microTesla full scale (4096) to 12.29 Gauss full scale
+    mRes = 10.*1229./4096.;
 
+    // So far, magnetometer bias is calculated and subtracted here manually,
+    // should construct an algorithm to do it automatically like the gyro and accelerometer biases
+    magbias[0] = -5.;   // User environmental x-axis correction in milliGauss  XXX FIXME
+    magbias[1] = -95.;  // User environmental y-axis correction in milliGauss  XXX FIXME
+    magbias[2] = -260.; // User environmental z-axis correction in milliGauss  XXX FIXME
+
+    // Main fusion loop
+    int mcount = 0;
+    // set magnetometer read rate in Hz; 10 to 100 (max) Hz are reasonable values
+    uint8_t MagRate = 10;
+
+
+#if 0
+    while(1) {
+        // If intPin goes high, all data registers have new data
+        // XXX FIXME : should do this in interrupt service
+        if(MPU9150.readByte(MPU9150_ADDRESS, INT_STATUS) & 0x01) {
+            static int16_t data[7];
+
+            // Read accel, temp and gyro data
+            mpu9150_read_data(data);
+
+            // Now we'll calculate the accleration value into actual g's
+            // Biases are removed by hardware if calibrate routine has been called
+            ax = (float)data[0]*aRes; // - accelBias[0];
+            ay = (float)data[1]*aRes; // - accelBias[1];
+            az = (float)data[2]*aRes; // - accelBias[2];
+
+            // Calculate the gyro value into actual degrees per second
+            // Biases are removed by hardware if calibrate routine has been called
+            gx = (float)data[5]*gRes; // - gyroBias[0];  // get actual gyro value, this depends on scale being set
+            gy = (float)data[6]*gRes; // - gyroBias[1];
+            gz = (float)data[7]*gRes; // - gyroBias[2];
+
+            mcount++;
+            // 200Hz sample rate for accel / gyro, 10Hz sammple rate for mag
+            // So read mag data every 200/10 times
+            // XXX FIXME : should do this more cleanly
+            if (mcount > 200/MagRate) {
+                // Get mag data
+                ak8975a_read_data(data);
+                // Calculate the magnetometer values in milliGauss
+                // Include factory calibration per data sheet and user environmental corrections
+                mx = (float)data[0]*mRes*magCalibration[0] - magbias[0];  // get actual magnetometer value, this depends on scale being set
+                my = (float)data[1]*mRes*magCalibration[1] - magbias[1];
+                mz = (float)data[2]*mRes*magCalibration[2] - magbias[2];
+                mcount = 0;
+            }
+        }
+
+        Now = t.read_us();
+        deltat = (float)((Now - lastUpdate)/1000000.0f) ; // set integration time by time elapsed since last filter update
+        lastUpdate = Now;
+
+        sum += deltat;
+        sumCount++;
+
+        //    if(lastUpdate - firstUpdate > 10000000.0f) {
+        //     beta = 0.04;  // decrease filter gain after stabilized
+        //     zeta = 0.015; // increasey bias drift gain after stabilized
+        //   }
+
+        // Pass gyro rate as rad/s
+        //  MPU9150.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
+        MPU9150.MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+
+        // Serial print and/or display at 0.5 s rate independent of data rates
+        delt_t = t.read_ms() - count;
+        if (delt_t > 500) { // update LCD once per half-second independent of read rate
+
+            pc.printf("ax = %f", 1000*ax);
+            pc.printf(" ay = %f", 1000*ay);
+            pc.printf(" az = %f  mg\n\r", 1000*az);
+
+            pc.printf("gx = %f", gx);
+            pc.printf(" gy = %f", gy);
+            pc.printf(" gz = %f  deg/s\n\r", gz);
+
+            pc.printf("gx = %f", mx);
+            pc.printf(" gy = %f", my);
+            pc.printf(" gz = %f  mG\n\r", mz);
+
+            tempCount = MPU9150.readTempData();  // Read the adc values
+            temperature = ((float) tempCount) / 340.0f + 36.53f; // Temperature in degrees Centigrade
+            pc.printf(" temperature = %f  C\n\r", temperature);
+
+            pc.printf("q0 = %f\n\r", q[0]);
+            pc.printf("q1 = %f\n\r", q[1]);
+            pc.printf("q2 = %f\n\r", q[2]);
+            pc.printf("q3 = %f\n\r", q[3]);
+
+            /*    lcd.clear();
+                  lcd.printString("MPU9150", 0, 0);
+                  lcd.printString("x   y   z", 0, 1);
+                  sprintf(buffer, "%d %d %d mg", (int)(1000.0f*ax), (int)(1000.0f*ay), (int)(1000.0f*az));
+                  lcd.printString(buffer, 0, 2);
+                  sprintf(buffer, "%d %d %d deg/s", (int)gx, (int)gy, (int)gz);
+                  lcd.printString(buffer, 0, 3);
+                  sprintf(buffer, "%d %d %d mG", (int)mx, (int)my, (int)mz);
+                  lcd.printString(buffer, 0, 4);
+            */
+            // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
+            // In this coordinate system, the positive z-axis is down toward Earth.
+            // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
+            // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
+            // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
+            // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
+            // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
+            // applied in the correct order which for this configuration is yaw, pitch, and then roll.
+            // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
+            yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
+            pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+            roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+            pitch *= 180.0f / PI;
+            yaw   *= 180.0f / PI;
+            yaw   -= 13.8f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
+            roll  *= 180.0f / PI;
+
+            pc.printf("Yaw, Pitch, Roll: %f %f %f\n\r", yaw, pitch, roll);
+            pc.printf("average rate = %f\n\r", (float) sumCount/sum);
+            //    sprintf(buffer, "YPR: %f %f %f", yaw, pitch, roll);
+            //    lcd.printString(buffer, 0, 4);
+            //    sprintf(buffer, "rate = %f", (float) sumCount/sum);
+            //    lcd.printString(buffer, 0, 5);
+
+            myled= !myled;
+            count = t.read_ms();
+
+            if(count > 1<<21) {
+                t.start(); // start the timer over again if ~30 minutes has passed
+                count = 0;
+                deltat= 0;
+                lastUpdate = t.read_us();
+            }
+            sum = 0;
+            sumCount = 0;
+        }
     }
 
+#endif
 }

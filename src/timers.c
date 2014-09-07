@@ -1,66 +1,54 @@
-#include "app_timer.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include "nrf.h"
 #include "timers.h"
+#include "printf.h"
 
-/**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_PRESCALER     0
-/**< Maximum number of simultaneously created timers. */
-#define APP_TIMER_MAX_TIMERS    2
-/**< Size of timer operation queues. */
-#define APP_TIMER_OP_QUEUE_SIZE 4
-/**< RTC interval, argument in ms (ticks). */
-#define RTC_INTERVAL            APP_TIMER_TICKS(1, APP_TIMER_PRESCALER)
+// This function *MUST* be called *AFTER* soft device init, else external
+// is not yet configured !
+void timer_init()
+{
+    // Stop timer.
+    NRF_TIMER2->TASKS_STOP         = 1;
+    // clear the task first to be usable for later.
+    NRF_TIMER2->TASKS_CLEAR    = 1;
+    // Set the timer in Timer Mode.
+    NRF_TIMER2->MODE           = TIMER_MODE_MODE_Timer;
+    // Prescaler 9 produces 31250Hz timer frequency
+    NRF_TIMER2->PRESCALER      = 9;
+    // 32 bit mode.
+    NRF_TIMER2->BITMODE        = 0;
 
-static app_timer_id_t   m_RTC_timer_id;
-static int32_t          millisecond_counter = 0;
+}
 
-/**@brief Function for handling the RTC timer timeout.
+
+/** @brief Function for using the peripheral hardware timers to generate an event after requested number of milliseconds.
  *
- * @details This function will be called each time the RTC timer expires (every ms).
- *
- * @param[in]   p_context   Pointer used for passing some arbitrary information (context) from the
- *                          app_start_timer() call to the timeout handler.
+ * @param[in] timer Timer to be used for delay, values from @ref  NRF_TIMER2
+ * @param[in] number_of_ms Number of milliseconds the timer will count.
+ * @note This function will power ON the requested timer, wait until the delay, and then power OFF that timer.
  */
-static void RTC_timeout_handler(void * p_context)
+void nrf_timer_delay_ms(uint_fast16_t volatile number_of_ms)
 {
-    ++millisecond_counter;
-}
+    timer_init();
 
-/**@brief Function for to get milliseconds count since the RTC timer started
- */
-int get_ms(uint32_t *count) // respects eMD6 convention
-{
-    if (!count)
-        return 1;
-    *count = millisecond_counter;
-    return 0;
-}
+    // With 15625Hz timer, we need to multiply ms by 31.25 to get the number of ticks to wait
+    NRF_TIMER2->CC[0] = number_of_ms * 31;
+    NRF_TIMER2->CC[0] += number_of_ms/4;
 
-/**@brief Function for to get how many milliseconds passed since given timestamp
- */
-uint32_t ms_passed_since(uint32_t last_ms)
-{
-    uint32_t now_ms;
-    get_ms(&now_ms);
+    // Start timer.
+    NRF_TIMER2->TASKS_START = 1;
 
-    return now_ms - last_ms;
-}
+    // Wait for CC event
+    while (NRF_TIMER2->EVENTS_COMPARE[0] == 0) {
+        //NRF_TIMER2->TASKS_CAPTURE[1] = 1;
+        //uint32_t v = NRF_TIMER2->CC[1];
+        //printf("%x\r\n", v);
+    }
 
+    // Clear event
+    NRF_TIMER2->EVENTS_COMPARE[0] = 0;
 
-/**@brief Function to initialize, create and start the times
- */
-void timers_init(void)
-{
-    // Initialize timer module
-    APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
-
-    // Create timers
-    uint32_t err_code = app_timer_create(&m_RTC_timer_id,
-                                         APP_TIMER_MODE_REPEATED,
-                                         RTC_timeout_handler);
-    APP_ERROR_CHECK(err_code);
-
-    // Start application timers
-    err_code = app_timer_start(m_RTC_timer_id, RTC_INTERVAL, NULL);
-    APP_ERROR_CHECK(err_code);
-
+    // Stop timer.
+    NRF_TIMER2->TASKS_STOP = 1;
 }

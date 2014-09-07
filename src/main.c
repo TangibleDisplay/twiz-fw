@@ -27,21 +27,21 @@ int main(void)
     uart_init();
 
     // Init timers
-    timers_init();
+    timer_init();
 
     // Init TWI
     i2c_init();
 
     // Run MPU9150 mainloop
-    mpu9150_mainloop();
-    while(1) ;
+    //mpu9150_mainloop();
+    //while(1) ;
 
     // Main loop
     while(1) {
         leds_blink(500);
         static uint32_t t;
-        get_ms(&t);
-        printf("Hello float=%.20f, time=%d\r\n", 1.123456789987654321, t);
+        //get_ms(&t);
+        //printf("Hello float=%.20f, time=%d\r\n", 1.123456789987654321, t);
     }
     return 0;
 }
