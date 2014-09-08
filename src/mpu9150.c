@@ -179,7 +179,7 @@ static bool calibrated = false;
 static int16_t accelCount[3];  // Stores the 16-bit signed accelerometer sensor output
 static int16_t gyroCount[3];   // Stores the 16-bit signed gyro sensor output
 static int16_t magCount[3];    // Stores the 16-bit signed magnetometer sensor output
-static float magCalibration[3] = {0, 0, 0}, magbias[3] = {0, 0, 0};  // Factory mag calibration and mag bias
+static float magCalibration[3] = {0, 0, 0}, magBias[3] = {0, 0, 0};  // Factory mag calibration and mag bias
 static float gyroBias[3] = {0, 0, 0}, accelBias[3] = {0, 0, 0}; // Bias corrections for gyro and accelerometer
 static float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values
 static int16_t tempCount;   // Stores the real internal chip temperature in degrees Celsius
@@ -260,10 +260,29 @@ static void setAres() {
         }
 }
 
-static void ak8975a_read_data(float * values)
+void ak8975a_init()
+{
+    // Check if magnometer is online
+    uint8_t whoami = i2c_read_byte(AK8975A_ADDRESS, WHO_AM_I_AK8975A);
+    printf("AK8975A : I am 0x%x\n\r", whoami);
+
+    if (whoami != 0x48) {
+        // WHO_AM_I should be 0x48
+        printf("ERROR : I SHOULD BE 0x48\n\r");
+        while(1) ;
+    }
+    printf("AK8975A is online...\n\r");
+
+    // Power down mode
+    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
+    nrf_delay_ms(10);
+}
+
+static int ak8975a_read_raw_data(int16_t *data)
 {
     static bool running = false;
     static uint8_t rawData[6];  // x/y/z gyro register data stored here
+    static int ret = 0;
 
     if (running) {
         // If there is a data available
@@ -273,26 +292,39 @@ static void ak8975a_read_data(float * values)
                 // Read the six raw data registers sequentially into data array
                 i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
                 // Turn the MSB and LSB into a signed 16-bit value
-                values[0] = (((int16_t)rawData[1])*256 + (int16_t)rawData[0]) * magCalibration[0];
-                values[1] = (((int16_t)rawData[3])*256 + (int16_t)rawData[2]) * magCalibration[1];
-                values[2] = (((int16_t)rawData[5])*256 + (int16_t)rawData[4]) * magCalibration[2];
+                data[0] = ((int16_t)rawData[1])*256 | rawData[0];
+                data[1] = ((int16_t)rawData[3])*256 | rawData[2];
+                data[2] = ((int16_t)rawData[5])*256 | rawData[4];
+                ret = 0;
             }
+            else
+                ret = -1;
             // Launch a new acquisition
             i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
-            return;
+            return ret;
         }
-        return;
     }
     else {
         // Else launch the first acquisition
         i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
         running = true;
     }
+    return -1;
+}
+
+static void ak8975a_read_data(float *mx, float *my, float *mz)
+{
+    static int16_t data[3];
+    ak8975a_read_raw_data(data);
+    *mx = (data[0] - magBias[0])*magCalibration[0];
+    *my = (data[1] - magBias[1])*magCalibration[1];
+    *mz = (data[2] - magBias[2])*magCalibration[2];
 }
 
 void ak8975a_calibrate()
 {
-    // First, get factory trim values
+#ifdef CALIBRATE_MAGNETO
+    // Get and store factory trim values
     uint8_t rawData[3];
     // Power down
     i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
@@ -309,34 +341,35 @@ void ak8975a_calibrate()
     magCalibration[1] =  (float)(rawData[1] - 128)/256.0f + 1.0f;
     magCalibration[2] =  (float)(rawData[2] - 128)/256.0f + 1.0f;
 
-    // Calibrating for hard iron : for some times, user is asked to move the device in
+    // Calibrate for hard iron : for some times, user is asked to move the device in
     // all directions. We record the min / max values, then compute the halfsum which
     // will be our offset.
 
     int meas_count = 20000;
     static int16_t data[3];
-    static float xmin = FLOAT_MAX, ymin =FLOAT_MAX, zmin = FLOAT_MAX;
-    static float xmax = FLOAT_MIN, ymax = FLOAT_MIN, zmax = FLOAT_MIN;
+    static int xmin = 32767, ymin =32767, zmin = 32767;
+    static int xmax = -327678, ymax = -32768, zmax = -32768;
 
     // Read a lot a values, hoping that the users moves the TWI in all possible directions
+    // Data include already the factory trim correction.
     for(int i=0; i<meas_count; i++) {
-        ak8975a_read_data(data);
+        ak8975a_read_raw_data(data);
 
 #if 1
-    for (int j=0; j<3; j++)
-        printf("%02x ", data[j]);
-    printf("\r\n");
+        for(int j=0; j<3; j++)
+            printf("%d ", (int)data[j]);
+        printf("\r\n");
 #endif
 
-    // Keep track of min and max along each axis
-    xmin = MIN(xmin, data[0]);
-    xmax = MAX(xmax, data[0]);
+        // Keep track of min and max along each axis
+        xmin = MIN(xmin, data[0]);
+        xmax = MAX(xmax, data[0]);
 
-    ymin = MIN(ymin, data[1]);
-    ymax = MAX(ymax, data[1]);
+        ymin = MIN(ymin, data[1]);
+        ymax = MAX(ymax, data[1]);
 
-    zmin = MIN(xmin, data[2]);
-    zmax = MAX(xmax, data[2]);
+        zmin = MIN(zmin, data[2]);
+        zmax = MAX(zmax, data[2]);
     }
 
 #if 1
@@ -344,12 +377,26 @@ void ak8975a_calibrate()
 #endif
 
     // Now calculate biases
-    magbias[0] = (xmin + xmax)/2;
-    magbias[1] = (ymin + ymax)/2;
-    magbias[2] = (zmin + zmax)/2;
+    magBias[0] = (xmin + xmax)/2.;
+    magBias[1] = (ymin + ymax)/2.;
+    magBias[2] = (zmin + zmax)/2.;
 
 #if 1
-    printf("xbias = %f, ybias = %f, zbias = %f\r\n", magbias[0], magbias[1], magbias[2]);
+    printf("Mag calibration values :\r\n");
+    printf("\txbias = %f, ybias = %f, zbias = %f\r\n", magBias[0], magBias[1], magBias[2]);
+    printf("\txcal = %f, ycal = %f, zcal = %f\r\n", magCalibration[0], magCalibration[1], magCalibration[2]);
+#endif
+
+#else
+    // Valeur de calibration sur la table de la A06 :)
+    // xbias = 7.000000, ybias = 29.500000, zbias = -142.000000
+    // xcal = 1.113281, ycal = 1.121094, zcal = 1.175781
+    magBias[0] = 7.000000;
+    magBias[1] = 29.500000;
+    magBias[2] = -142.000000;
+    magCalibration[0] = 1.113281;
+    magCalibration[1] = 1.121094;
+    magCalibration[2] = 1.175781;
 #endif
 
 }
@@ -853,17 +900,6 @@ void mpu9150_mainloop()
     // OK for MPU9150
     printf("MPU9150 initialized for active data mode....\n\r");
 
-    // Check if magnometer is online too
-    whoami = i2c_read_byte(AK8975A_ADDRESS, WHO_AM_I_AK8975A);
-    printf("AK8975A : I am 0x%x\n\r", whoami);
-
-    if (whoami != 0x48) {
-        // WHO_AM_I should be 0x48
-        printf("ERROR : I SHOULD BE 0x48\n\r");
-        return;
-    }
-    printf("AK8975A is online...\n\r");
-
     // Calibrate magnetometer
     // XXX FIXME : write a real calibration routine for hard iron
     ak8975a_init(magCalibration);
@@ -875,11 +911,6 @@ void mpu9150_mainloop()
     // Conversion from 1229 microTesla full scale (4096) to 12.29 Gauss full scale
     mRes = 10.*1229./4096.;
 
-    // So far, magnetometer bias is calculated and subtracted here manually,
-    // should construct an algorithm to do it automatically like the gyro and accelerometer biases
-    magbias[0] = -5.;   // User environmental x-axis correction in milliGauss  XXX FIXME
-    magbias[1] = -95.;  // User environmental y-axis correction in milliGauss  XXX FIXME
-    magbias[2] = -260.; // User environmental z-axis correction in milliGauss  XXX FIXME
 
     // Main fusion loop
     int mcount = 0;
@@ -915,12 +946,7 @@ void mpu9150_mainloop()
             // XXX FIXME : should do this more cleanly
             if (mcount > 200/MagRate) {
                 // Get mag data
-                ak8975a_read_data(data);
-                // Calculate the magnetometer values in milliGauss
-                // Include factory calibration per data sheet and user environmental corrections
-                mx = (float)data[0]*mRes*magCalibration[0] - magbias[0];  // get actual magnetometer value, this depends on scale being set
-                my = (float)data[1]*mRes*magCalibration[1] - magbias[1];
-                mz = (float)data[2]*mRes*magCalibration[2] - magbias[2];
+                ak8975a_read_data(&mx, &my, &mz);
                 mcount = 0;
             }
         }

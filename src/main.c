@@ -26,6 +26,7 @@ int main(void)
 
     // Init UART
     uart_init();
+    printf("Hello World!\r\n");
 
     // Init timers
     timer_init();
@@ -36,10 +37,9 @@ int main(void)
     // Run MPU9150 mainloop
     //mpu9150_mainloop();
     //while(1) ;
-    float d[3];
     mpu9150_init();
-    ak8975a_init(d);
-    ak8975a_calibrate(NULL);
+    ak8975a_init();
+    ak8975a_calibrate();
 
 
     // Main loop
