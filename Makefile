@@ -217,7 +217,7 @@ startgdbserver:
 	@pidof JLinkGDBServer > /dev/null || { $(TERMINAL) "$(JLINKGDBSERVER) -if swd -speed 1000 -port $(GDB_PORT_NUMBER)" & sleep 1 ; }
 
 debug: $(ELF) startgdbserver
-	$(GDB) -ex "source scripts/flash.gdb" -ex "split" $(ELF)
+	$(GDB) $(ELF)
 
 stopgdbserver:
 	@pidof JLinkGDBServer > /dev/null && killall $(JLINKGDBSERVER) || true
