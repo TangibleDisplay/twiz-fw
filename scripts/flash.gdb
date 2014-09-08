@@ -22,9 +22,19 @@ define flash-all
   mon go
 end
 
-# Usage: flash elf
+# Usage: flash (elf should be loaded on commande line)
 define flash
   dont-repeat
+  mon halt
+  load
+  mon reset
+  cont
+end
+
+# Usage: flash-elf (elf should be loaded on commande line)
+define flash-elf
+  dont-repeat
+  mon halt
   file $arg0
   load
   set {int} 0x10001014 = 0xFfffFfff
