@@ -35,11 +35,11 @@ int main(void)
     i2c_init();
 
     // Run MPU9150 mainloop
-    //mpu9150_mainloop();
-    //while(1) ;
     mpu9150_init();
+    mpu9150_calibrate();
     ak8975a_init();
     ak8975a_calibrate();
+    mpu9150_mainloop();
 
 
     // Main loop

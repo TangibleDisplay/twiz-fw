@@ -38,10 +38,19 @@ void timer_init()
 uint32_t get_time()
 {
     // Capture both timers
-    // FIXME : there might be an overflow during this operation !
-    NRF_TIMER1->TASKS_CAPTURE[1] = 1;
     NRF_TIMER2->TASKS_CAPTURE[1] = 1;
-    return (uint32_t)(((uint32_t)NRF_TIMER2->CC[1]) << 16 | NRF_TIMER1->CC[1]);
+    uint32_t th = NRF_TIMER2->CC[1];
+    NRF_TIMER1->TASKS_CAPTURE[1] = 1;
+    uint32_t tl = NRF_TIMER1->CC[1];
+    NRF_TIMER2->TASKS_CAPTURE[1] = 1;
+    uint32_t th2 = NRF_TIMER2->CC[1];
+    if (th != th2) {
+        // Overflow --> reread TIMER1
+        NRF_TIMER1->TASKS_CAPTURE[1] = 1;
+        uint32_t tl = NRF_TIMER1->CC[1];
+    }
+
+    return (th << 16) | tl;
 }
 
 
