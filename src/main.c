@@ -8,6 +8,7 @@
 #include "uart.h"
 #include "printf.h"
 #include "i2c_wrapper.h"
+#include "nrf_delay.h"
 
 
 /**
