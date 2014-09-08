@@ -187,7 +187,7 @@ static float PI = 3.14159265358979323846f;
 // PI * (60.0f / 180.0f);
 static float GyroMeasError = 1.0471975511965976f;
 // compute beta = sqrt(3.0f / 4.0f) * GyroMeasError;
-static float beta = 0.9068996821171088f;
+static float beta = 0.3068996821171088f; // XXX FIXME 0.9
 // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
 // PI * (1.0f / 180.0f)
 static float GyroMeasDrift = 0.017453292519943295f;
@@ -263,7 +263,7 @@ static int ak8975a_read_raw_data(int16_t *data)
 static void ak8975a_read_data(float *mx, float *my, float *mz)
 {
     static int16_t data[3];
-    ak8975a_read_raw_data(data);
+    while(ak8975a_read_raw_data(data) != 0) ;
     *mx = (data[0] - magBias[0])*magCalibration[0];
     *my = (data[1] - magBias[1])*magCalibration[1];
     *mz = (data[2] - magBias[2])*magCalibration[2];
@@ -271,7 +271,7 @@ static void ak8975a_read_data(float *mx, float *my, float *mz)
 
 void ak8975a_calibrate()
 {
-#ifdef CALIBRATE_MAGNETO
+#if 1
     // Get and store factory trim values
     uint8_t rawData[3];
     // Power down
@@ -293,7 +293,7 @@ void ak8975a_calibrate()
     // all directions. We record the min / max values, then compute the halfsum which
     // will be our offset.
 
-    int meas_count = 20000;
+    int meas_count = 2000;
     static int16_t data[3];
     static int xmin = 32767, ymin =32767, zmin = 32767;
     static int xmax = -327678, ymax = -32768, zmax = -32768;
@@ -301,7 +301,10 @@ void ak8975a_calibrate()
     // Read a lot a values, hoping that the users moves the TWI in all possible directions
     // Data include already the factory trim correction.
     for(int i=0; i<meas_count; i++) {
-        ak8975a_read_raw_data(data);
+        if (ak8975a_read_raw_data(data) != 0) {
+            i--;
+            continue;
+        }
 
 #if 1
         for(int j=0; j<3; j++)
@@ -328,6 +331,11 @@ void ak8975a_calibrate()
         magBias[0] = (xmin + xmax)/2.;
         magBias[1] = (ymin + ymax)/2.;
         magBias[2] = (zmin + zmax)/2.;
+
+        // And update calibration data so that max = 180
+        magCalibration[0] = 360./(xmax - xmin);
+        magCalibration[1] = 360./(ymax - ymin);
+        magCalibration[2] = 360./(zmax - zmin);
 
 #if 1
         printf("Mag calibration values :\r\n");
@@ -444,7 +452,7 @@ void ak8975a_calibrate()
          i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
 
          // Debug
-#if 0
+#if 1
          for (int j=0; j<14; j=j+2)
              printf("%02x%02x ", data[j], data[j+1]);
          printf("\r\n");
@@ -620,6 +628,12 @@ void ak8975a_calibrate()
      // Convert each 2 byte into signed 16bit values
      for(int i=0; i<7; i++)
          values[i] = (int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
+
+#if 0
+     for (int j=0; j<7; j++)
+         printf("%08x ", values[j]);
+     printf("\r\n");
+#endif
  }
 
 
@@ -843,6 +857,22 @@ void ak8975a_calibrate()
      mpu9150_selftest(SelfTest);
 #endif
 
+     mpu9150_calibrate();
+     while(1) {
+         int16_t data[7];
+         mpu9150_read_data(data);
+         for(int i=0; i<3; i++)
+             printf("%04x ", (uint16_t) data[i]);
+         for(int i=4; i<7; i++)
+             printf("%04x ", (uint16_t) data[i]);
+         ak8975a_read_raw_data(data);
+         for(int i=0; i<3; i++)
+             printf("%04x ", (uint16_t) data[i]);
+         printf("\r\n");
+     }
+
+
+
      // Calibrate accel and gyro MPU9150
      mpu9150_calibrate();
 
@@ -854,15 +884,26 @@ void ak8975a_calibrate()
      ak8975a_calibrate();
      printf("AK8975 initialized for active data mode....\n\r");
 
+#if 0
+     while(1) {
+         ak8975a_read_data(&mx, &my, &mz);
+         printf("x=%04.2f, y=%04.2f, z=%04.2f\r\n", mx, my, mz);
+     }
+#endif
+
+
+
      // Main fusion loop
      int mcount = 0;
      // set magnetometer read rate in Hz; 10 to 100 (max) Hz are reasonable values
-     uint8_t MagRate = 10;
+     uint8_t MagRate = 100;
      // Used to calculate integration interval
      static int lastUpdate = 0, Now = 0;
+     // Used to display not so often
+     static int lastDisplay = 0;
 
      while(1) {
-         // If intPin goes high or NEW_DATA regsiter is set, the all data registers have new data
+         // If intPin goes high or NEW_DATA register is set, then all data registers have new data
          // XXX FIXME : should do this in interrupt service
          if (i2c_read_byte(MPU9150_ADDRESS, INT_STATUS) & 0x01) {
              static int16_t data[7];
@@ -875,19 +916,20 @@ void ak8975a_calibrate()
              ay = (float)data[1];
              az = (float)data[2];
 
-             // Biases are removed by hardware if calibrate routine has been called
-             gx = (float)data[4];
-             gy = (float)data[5];
-             gz = (float)data[6];
+             // Biases are removed by hardware if calibrate routine has been called.
+             // Gyro values need to be scaled. Hhere we are at 250dps.
+             gx = (float)data[4]*250.0/32768.0*PI/180.0;
+             gy = (float)data[5]*250.0/32768.0*PI/180.0;
+             gz = (float)data[6]*250.0/32768.0*PI/180.0;
 
-             // Temmperature (why not ?)
+             // Temmperature (not used)
              temperature = data[4];
 
              mcount++;
              // 200Hz sample rate for accel / gyro, 10Hz sammple rate for mag
              // So read mag data every 200/10 times
              // XXX FIXME : should do this more cleanly
-             if (mcount > 200/MagRate) {
+             if (mcount >= 200/MagRate) {
                  // Get mag data
                  ak8975a_read_data(&mx, &my, &mz);
                  mcount = 0;
@@ -906,30 +948,46 @@ void ak8975a_calibrate()
 
          // Fusion. Pass gyro rate as rad/s
          // WARNING : on mpu9150, magnetometer axis x and y are swapped !!!
-#ifdef USE_MAHONY
-         mahony_quaternion_update(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+         //int t1, t2;
+         //t1 = get_time();
+
+
+         printf("ax=%04.2f, ay=%04.2f, az=%04.2f, gx=%04.2f,  \
+gy=%04.2f, gz=%04.2f, mx=%04.2f, my=%04.2f, mz=%04.2f\r\n",
+                ax, ay, az, gx, gy, gz, mx, my, mz);
+         continue;
+
+#if 1
+         //mahony_quaternion_update(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
 #else
-         madgwick_quaternion_update(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
+         //madgwick_quaternion_update(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
 #endif
+         //t2 = get_time();
+         //printf("dt=%d\r\n", t2-t1);
 
-         // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
-         // In this coordinate system, the positive z-axis is down toward Earth.
-         // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
-         // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
-         // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
-         // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
-         // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
-         // applied in the correct order which for this configuration is yaw, pitch, and then roll.
-         // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-         yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
-         pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-         roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-         pitch *= 180.0f / PI;
-         yaw   *= 180.0f / PI;
-         yaw   -= 13.8f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
-         roll  *= 180.0f / PI;
+         // Display 10 times/s
+         if((Now-lastDisplay) > 100000) {
+             lastDisplay = Now;
 
-         printf("Yaw, Pitch, Roll: %f %f %f\n\r", yaw, pitch, roll);
-         //printf("average rate = %f\n\r", (float) sumCount/sum);
+             // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
+             // In this coordinate system, the positive z-axis is down toward Earth.
+             // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
+             // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
+             // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
+             // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
+             // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
+             // applied in the correct order which for this configuration is yaw, pitch, and then roll.
+             // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
+             yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
+             pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+             roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+             pitch *= 180.0f / PI;
+             yaw   *= 180.0f / PI;
+             yaw   -= 13.8f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
+             roll  *= 180.0f / PI;
+
+             printf("Yaw, Pitch, Roll: %3.2f %3.2f %3.2f\n\r", yaw, pitch, roll);
+             //printf("average rate = %f\n\r", (float) sumCount/sum);
+         }
      }
  }
