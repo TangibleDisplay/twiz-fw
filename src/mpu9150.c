@@ -6,11 +6,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <limits.h>
 
 #include "mpu9150.h"
 #include "i2c_wrapper.h"
 #include "nrf_delay.h"
 #include "printf.h"
+#include "nordic_common.h"
 
 // Define registers per MPU6050, Register Map and Descriptions, Rev 4.2, 08/19/2013 6 DOF Motion sensor fusion device
 // Invensense Inc., www.invensense.com
@@ -258,7 +260,7 @@ static void setAres() {
         }
 }
 
-static void ak8975a_read_data(int16_t * destination)
+static void ak8975a_read_data(float * values)
 {
     static bool running = false;
     static uint8_t rawData[6];  // x/y/z gyro register data stored here
@@ -271,9 +273,9 @@ static void ak8975a_read_data(int16_t * destination)
                 // Read the six raw data registers sequentially into data array
                 i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
                 // Turn the MSB and LSB into a signed 16-bit value
-                destination[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;
-                destination[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;
-                destination[2] = ((int16_t)rawData[5] << 8) | rawData[4] ;
+                values[0] = (((int16_t)rawData[1])*256 + (int16_t)rawData[0]) * magCalibration[0];
+                values[1] = (((int16_t)rawData[3])*256 + (int16_t)rawData[2]) * magCalibration[1];
+                values[2] = (((int16_t)rawData[5])*256 + (int16_t)rawData[4]) * magCalibration[2];
             }
             // Launch a new acquisition
             i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
@@ -288,9 +290,10 @@ static void ak8975a_read_data(int16_t * destination)
     }
 }
 
-static void ak8975a_init(float * destination)
+void ak8975a_calibrate()
 {
-    uint8_t rawData[3];  // x/y/z gyro register data stored here
+    // First, get factory trim values
+    uint8_t rawData[3];
     // Power down
     i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
     nrf_delay_ms(1);
@@ -302,27 +305,53 @@ static void ak8975a_init(float * destination)
     // Back to power down mode
     i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
 
-#if 0
-    for (int j=0; j<3; j++)
-        printf("%02x ", rawData[j]);
-    printf("\r\n");
-#endif
+    magCalibration[0] =  (float)(rawData[0] - 128)/256.0f + 1.0f; // Return x-axis sensitivity adjustment values
+    magCalibration[1] =  (float)(rawData[1] - 128)/256.0f + 1.0f;
+    magCalibration[2] =  (float)(rawData[2] - 128)/256.0f + 1.0f;
 
-    destination[0] =  (float)(rawData[0] - 128)/256.0f + 1.0f; // Return x-axis sensitivity adjustment values
-    destination[1] =  (float)(rawData[1] - 128)/256.0f + 1.0f;
-    destination[2] =  (float)(rawData[2] - 128)/256.0f + 1.0f;
-}
-
-
-static void ak8975a_calibrate(float * destination)
-{
     // Calibrating for hard iron : for some times, user is asked to move the device in
     // all directions. We record the min / max values, then compute the halfsum which
     // will be our offset.
 
-    // XXX FIXME : to do later !
+    int meas_count = 20000;
+    static int16_t data[3];
+    static float xmin = FLOAT_MAX, ymin =FLOAT_MAX, zmin = FLOAT_MAX;
+    static float xmax = FLOAT_MIN, ymax = FLOAT_MIN, zmax = FLOAT_MIN;
 
-    UNUSED_PARAMETER(destination);
+    // Read a lot a values, hoping that the users moves the TWI in all possible directions
+    for(int i=0; i<meas_count; i++) {
+        ak8975a_read_data(data);
+
+#if 1
+    for (int j=0; j<3; j++)
+        printf("%02x ", data[j]);
+    printf("\r\n");
+#endif
+
+    // Keep track of min and max along each axis
+    xmin = MIN(xmin, data[0]);
+    xmax = MAX(xmax, data[0]);
+
+    ymin = MIN(ymin, data[1]);
+    ymax = MAX(ymax, data[1]);
+
+    zmin = MIN(xmin, data[2]);
+    zmax = MAX(xmax, data[2]);
+    }
+
+#if 1
+    printf("xmin=%d, xmax=%d, ymin=%d, ymax=%d, zmin=%d, zmax=%d\r\n", xmin, xmax, ymin, ymax, zmin, zmax);
+#endif
+
+    // Now calculate biases
+    magbias[0] = (xmin + xmax)/2;
+    magbias[1] = (ymin + ymax)/2;
+    magbias[2] = (zmin + zmax)/2;
+
+#if 1
+    printf("xbias = %f, ybias = %f, zbias = %f\r\n", magbias[0], magbias[1], magbias[2]);
+#endif
+
 }
 
 static void mpu9150_reset() {

@@ -36,13 +36,16 @@ int main(void)
     // Run MPU9150 mainloop
     //mpu9150_mainloop();
     //while(1) ;
+    float d[3];
+    mpu9150_init();
+    ak8975a_init(d);
+    ak8975a_calibrate(NULL);
+
 
     // Main loop
     while(1) {
         leds_blink(500);
-        static uint32_t t;
-        //get_ms(&t);
-        //printf("Hello float=%.20f, time=%d\r\n", 1.123456789987654321, t);
+        printf("Hello float=%.20f, time=%d\r\n", 1.123456789987654321, get_time());
     }
     return 0;
 }
