@@ -966,7 +966,7 @@ gy=%04.2f, gz=%04.2f, mx=%04.2f, my=%04.2f, mz=%04.2f\r\n",
          //printf("dt=%d\r\n", t2-t1);
 
          // Display 10 times/s
-         if((Now-lastDisplay) > 100000) {
+         if((Now-lastDisplay) > 20000) {
              lastDisplay = Now;
 
              // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
