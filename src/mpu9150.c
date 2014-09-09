@@ -240,9 +240,11 @@ static int ak8975a_read_raw_data(int16_t *data)
                 // Read the six raw data registers sequentially into data array
                 i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
                 // Turn the MSB and LSB into a signed 16-bit value
-                data[0] = ((int16_t)rawData[1])*256 | rawData[0];
-                data[1] = ((int16_t)rawData[3])*256 | rawData[2];
-                data[2] = ((int16_t)rawData[5])*256 | rawData[4];
+                // XXX FIXME : WARNING, magnetometer axis are not the same as the accel / gyro ones
+                // Thus : x <--> y, and z <--> -z
+                data[1] = ((int16_t)rawData[1])*256 | rawData[0];
+                data[0] = ((int16_t)rawData[3])*256 | rawData[2];
+                data[2] = -((int16_t)rawData[5])*256 | rawData[4];
                 ret = 0;
             }
             else
@@ -323,9 +325,7 @@ void ak8975a_calibrate()
         zmax = MAX(zmax, data[2]);
     }
 
-#if 1
         printf("xmin=%d, xmax=%d, ymin=%d, ymax=%d, zmin=%d, zmax=%d\r\n", xmin, xmax, ymin, ymax, zmin, zmax);
-#endif
 
         // Now calculate biases
         magBias[0] = (xmin + xmax)/2.;
@@ -337,11 +337,9 @@ void ak8975a_calibrate()
         magCalibration[1] = 360./(ymax - ymin);
         magCalibration[2] = 360./(zmax - zmin);
 
-#if 1
         printf("Mag calibration values :\r\n");
         printf("\txbias = %f, ybias = %f, zbias = %f\r\n", magBias[0], magBias[1], magBias[2]);
         printf("\txcal = %f, ycal = %f, zcal = %f\r\n", magCalibration[0], magCalibration[1], magCalibration[2]);
-#endif
 
 #else
         // Valeur de calibration sur la table de la A06 :)
@@ -452,7 +450,7 @@ void ak8975a_calibrate()
          i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
 
          // Debug
-#if 1
+#if 0
          for (int j=0; j<14; j=j+2)
              printf("%02x%02x ", data[j], data[j+1]);
          printf("\r\n");
@@ -626,8 +624,18 @@ void ak8975a_calibrate()
      i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
 
      // Convert each 2 byte into signed 16bit values
-     for(int i=0; i<7; i++)
+     // XXX FIXME : WARNING, accel axis seems to be inconsistent with the datasheet (all signs are reversed)
+     // Hence, the "-...." on the accel values
+     for(int i=0; i<3; i++)
+         values[i] = -(int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
+     for(int i=3; i<7; i++)
          values[i] = (int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
+
+#if 0
+     for (int j=0; j<14; j++)
+         printf("%02x ", (uint8_t)data[j]);
+     printf("\r\n");
+#endif
 
 #if 0
      for (int j=0; j<7; j++)
@@ -857,7 +865,13 @@ void ak8975a_calibrate()
      mpu9150_selftest(SelfTest);
 #endif
 
+     // Calibrate accel and gyro MPU9150
      mpu9150_calibrate();
+
+     // OK for MPU9150
+     printf("MPU9150 initialized for active data mode....\n\r");
+
+#if 0
      while(1) {
          int16_t data[7];
          mpu9150_read_data(data);
@@ -865,19 +879,12 @@ void ak8975a_calibrate()
              printf("%04x ", (uint16_t) data[i]);
          for(int i=4; i<7; i++)
              printf("%04x ", (uint16_t) data[i]);
-         ak8975a_read_raw_data(data);
+         while(ak8975a_read_raw_data(data) != 0) ;
          for(int i=0; i<3; i++)
-             printf("%04x ", (uint16_t) data[i]);
+             printf("%08d ", data[i]);
          printf("\r\n");
      }
-
-
-
-     // Calibrate accel and gyro MPU9150
-     mpu9150_calibrate();
-
-     // OK for MPU9150
-     printf("MPU9150 initialized for active data mode....\n\r");
+#endif
 
      // Init and calibrate magnetometer
      ak8975a_init();
@@ -917,23 +924,16 @@ void ak8975a_calibrate()
              az = (float)data[2];
 
              // Biases are removed by hardware if calibrate routine has been called.
-             // Gyro values need to be scaled. Hhere we are at 250dps.
+             // Gyro values need to be scaled. Here we are at 250dps for full scale
              gx = (float)data[4]*250.0/32768.0*PI/180.0;
              gy = (float)data[5]*250.0/32768.0*PI/180.0;
              gz = (float)data[6]*250.0/32768.0*PI/180.0;
 
-             // Temmperature (not used)
+             // Temperature (not used)
              temperature = data[4];
 
-             mcount++;
-             // 200Hz sample rate for accel / gyro, 10Hz sammple rate for mag
-             // So read mag data every 200/10 times
-             // XXX FIXME : should do this more cleanly
-             if (mcount >= 200/MagRate) {
-                 // Get mag data
-                 ak8975a_read_data(&mx, &my, &mz);
-                 mcount = 0;
-             }
+             // Get mag data
+             ak8975a_read_data(&mx, &my, &mz);
          }
 
          // Get integration time by time elapsed since last filter update
@@ -951,16 +951,16 @@ void ak8975a_calibrate()
          //int t1, t2;
          //t1 = get_time();
 
-
+#if 0
          printf("ax=%04.2f, ay=%04.2f, az=%04.2f, gx=%04.2f,  \
 gy=%04.2f, gz=%04.2f, mx=%04.2f, my=%04.2f, mz=%04.2f\r\n",
                 ax, ay, az, gx, gy, gz, mx, my, mz);
-         continue;
+#endif
 
-#if 1
-         //mahony_quaternion_update(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+#if 0
+         mahony_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz);
 #else
-         //madgwick_quaternion_update(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
+         madgwick_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz);
 #endif
          //t2 = get_time();
          //printf("dt=%d\r\n", t2-t1);
