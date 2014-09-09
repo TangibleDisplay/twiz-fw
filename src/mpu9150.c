@@ -194,10 +194,6 @@ static float GyroMeasDrift = 0.017453292519943295f;
 // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
 // zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;
 static float zeta = 0.015114994701951814f;
-// these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback,
-// Ki for integral
-#define Kp (2.0f * 5.0f)
-#define Ki (0.0f)
 
 static float pitch, yaw, roll;
 // integration interval for both filter schemes
@@ -748,6 +744,11 @@ void ak8975a_calibrate()
 
  // Similar to Madgwick scheme but uses proportional and integral filtering on the error between estimated reference vectors and
  // measured ones.
+// these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback,
+// Ki for integral
+#define Kp (2.0f * 5.0f)
+#define Ki (0.1f)
+
  void mahony_quaternion_update(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
  {
      float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
@@ -947,9 +948,8 @@ void ak8975a_calibrate()
          //   }
 
          // Fusion. Pass gyro rate as rad/s
-         // WARNING : on mpu9150, magnetometer axis x and y are swapped !!!
-         //int t1, t2;
-         //t1 = get_time();
+         int t1, t2;
+         t1 = get_time();
 
 #if 0
          printf("ax=%04.2f, ay=%04.2f, az=%04.2f, gx=%04.2f,  \
@@ -962,7 +962,7 @@ gy=%04.2f, gz=%04.2f, mx=%04.2f, my=%04.2f, mz=%04.2f\r\n",
 #else
          madgwick_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz);
 #endif
-         //t2 = get_time();
+         t2 = get_time();
          //printf("dt=%d\r\n", t2-t1);
 
          // Display 10 times/s
