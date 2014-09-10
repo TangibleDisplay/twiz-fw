@@ -47,7 +47,7 @@ uint32_t get_time()
     if (th != th2) {
         // Overflow --> reread TIMER1
         NRF_TIMER1->TASKS_CAPTURE[1] = 1;
-        uint32_t tl = NRF_TIMER1->CC[1];
+        tl = NRF_TIMER1->CC[1];
     }
 
     return (th << 16) | tl;

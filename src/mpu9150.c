@@ -185,15 +185,15 @@ static float temperature;
 static float PI = 3.14159265358979323846f;
 // gyroscope measurement error in rads/s (start at 60 deg/s), then reduce after ~10 s to 3
 // PI * (60.0f / 180.0f);
-static float GyroMeasError = 1.0471975511965976f;
+//static float GyroMeasError = 1.0471975511965976f;
 // compute beta = sqrt(3.0f / 4.0f) * GyroMeasError;
 static float beta = 0.3068996821171088f; // XXX FIXME 0.9
 // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
 // PI * (1.0f / 180.0f)
-static float GyroMeasDrift = 0.017453292519943295f;
+//static float GyroMeasDrift = 0.017453292519943295f;
 // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
 // zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;
-static float zeta = 0.015114994701951814f;
+//static float zeta = 0.015114994701951814f;
 
 static float pitch, yaw, roll;
 // integration interval for both filter schemes
@@ -902,9 +902,9 @@ void ak8975a_calibrate()
 
 
      // Main fusion loop
-     int mcount = 0;
+     //int mcount = 0;
      // set magnetometer read rate in Hz; 10 to 100 (max) Hz are reasonable values
-     uint8_t MagRate = 100;
+     //uint8_t MagRate = 100;
      // Used to calculate integration interval
      static int lastUpdate = 0, Now = 0;
      // Used to display not so often
@@ -948,8 +948,8 @@ void ak8975a_calibrate()
          //   }
 
          // Fusion. Pass gyro rate as rad/s
-         int t1, t2;
-         t1 = get_time();
+         //int t1, t2;
+         //t1 = get_time();
 
 #if 0
          printf("ax=%04.2f, ay=%04.2f, az=%04.2f, gx=%04.2f,  \
@@ -962,7 +962,7 @@ gy=%04.2f, gz=%04.2f, mx=%04.2f, my=%04.2f, mz=%04.2f\r\n",
 #else
          madgwick_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz);
 #endif
-         t2 = get_time();
+         //t2 = get_time();
          //printf("dt=%d\r\n", t2-t1);
 
          // Display 10 times/s
