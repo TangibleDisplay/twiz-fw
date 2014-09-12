@@ -1,47 +1,63 @@
 #include <stdint.h>
-#include <stdbool.h>
-
-#include "nordic_common.h"
-#include "softdevice_handler.h"
-#include "timers.h"
-#include "leds.h"
+#include <string.h>
 #include "uart.h"
-#include "printf.h"
-#include "i2c_wrapper.h"
-#include "nrf_delay.h"
+#include "boards.h"
+#include "nordic_common.h"
+#include "mpu9150.h"
+#include "leds.h"
+#include "low_res_timer.h"
+#include "high_res_timer.h"
+#include "twi_gap.h"
+#include "twi_conn.h"
+#include "twi_advertising.h"
+#include "twi_ble_stack.h"
+#include "twi_sys_evt.h"
+#include "twi_scheduler.h"
 
 
-/**
- * @brief Function for application main entry.
+// IMU timer handler
+void imu_timer_handler(void * p_context)
+{
+    UNUSED_PARAMETER(p_context);
+
+    // update imu data to advertize it
+	advertising_init();
+    // Visual debug : toggle LED 0
+    nrf_gpio_pin_toggle(LED_0);
+}
+
+
+/**@brief Function for application main entry.
  */
 int main(void)
 {
-    // Init SD so that timers have a clock reference, and to be ablr to call SD functions.
-    // Must be done first !
-    SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_SYNTH_250_PPM, false);
-    nrf_delay_ms(100);
-
-    // Init LEDs
+    // Initialize
     leds_init();
-
-    // Init UART
+    ble_stack_init();
+    scheduler_init();
+    low_res_timer_init();
+    high_res_timer_init();
     uart_init();
-    printf("Hello World!\r\n");
+    imu_init();
 
-    // Init timers
-    timer_init();
+    // Setup BLE stack
+    advertising_init();
+    conn_params_init();
+    sec_params_init();
+    gap_params_init();
 
-    // Init TWI
-    i2c_init();
+    // Start execution
+    low_res_timer_start();
+    advertising_start();
 
-    // Run MPU9150 mainloop
-    mpu9150_mainloop();
-
-
-    // Main loop
-    while(1) {
-        leds_blink(500);
-        printf("Hello float=%.20f, time=%d\r\n", 1.123456789987654321, get_time());
+    // Enter main loop
+    for (;;)
+    {
+        app_sched_execute();
+        mpu9150_update();
     }
-    return 0;
 }
+
+/**
+ * @}
+ */

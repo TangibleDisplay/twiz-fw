@@ -2,12 +2,12 @@
 #include <stdint.h>
 #include "nrf.h"
 #include "nrf_soc.h"
-#include "timers.h"
+#include "high_res_timer.h"
 #include "printf.h"
 
 // This function *MUST* be called *AFTER* soft device init, else external clock
 // is not yet configured !
-void timer_init()
+void high_res_timer_init()
 {
     // We'll use TIMER1 and TIMER2 (both 16 bits) to create a virtual 32 bit TIMER
     // Stop timers

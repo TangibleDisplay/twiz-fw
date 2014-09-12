@@ -16,5 +16,4 @@
 #define MPU9150_INT_PIN                     (6u)
 #define LED_0                               13
 
-
 #endif

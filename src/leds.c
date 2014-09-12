@@ -1,6 +1,6 @@
 #include "leds.h"
 #include "nrf_gpio.h"
-#include "timers.h"
+#include "high_res_timer.h"
 #include "boards.h"
 
 void leds_init(void)

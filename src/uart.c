@@ -3,6 +3,7 @@
 
 #include "uart.h"
 #include "boards.h"
+#include "nrf_delay.h"
 
 #ifdef UART_IRQ
 
@@ -43,6 +44,7 @@ int putchar(int c)
 void uart_init()
 {
     simple_uart_config(UART_RTS_PIN, UART_TX_PIN, UART_CTS_PIN, UART_RX_PIN, false);
+    nrf_delay_ms(300);
 }
 
 int putchar(int c)

@@ -1,20 +1,39 @@
 C_SOURCE_FILES += main.c
 C_SOURCE_FILES += leds.c
-C_SOURCE_FILES += timers.c
-C_SOURCE_FILES += helpers.c
 C_SOURCE_FILES += uart.c
 C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
 C_SOURCE_FILES += twi_hw_master_sd.c
 C_SOURCE_FILES += i2c_wrapper.c
 C_SOURCE_FILES += mpu9150.c
+C_SOURCE_FILES += errors.c
+C_SOURCE_FILES += low_res_timer.c
+C_SOURCE_FILES += high_res_timer.c
+C_SOURCE_FILES += twi_ble_stack.c
+C_SOURCE_FILES += twi_ble_evt.c
+C_SOURCE_FILES += twi_advertising.c
+C_SOURCE_FILES += twi_gap.c
+C_SOURCE_FILES += twi_sys_evt.c
+C_SOURCE_FILES += twi_conn.c
+C_SOURCE_FILES += twi_scheduler.c
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
+C_SOURCE_FILES += nrf_delay.c
+
 C_SOURCE_FILES += app_fifo.c
 C_SOURCE_FILES += app_uart_fifo.c
 C_SOURCE_FILES += app_gpiote.c
-C_SOURCE_FILES += nrf_delay.c
+C_SOURCE_FILES += app_button.c
+C_SOURCE_FILES += app_timer.c
+C_SOURCE_FILES += app_scheduler.c
+
+C_SOURCE_FILES += pstorage.c
 C_SOURCE_FILES += softdevice_handler.c
+
+C_SOURCE_FILES += ble_debug_assert_handler.c
+C_SOURCE_FILES += ble_error_log.c
+C_SOURCE_FILES += ble_advdata.c
+C_SOURCE_FILES += ble_conn_params.c
 
 # startup files
 C_SOURCE_FILES += system_$(DEVICESERIES).c
@@ -94,7 +113,6 @@ CFLAGS += -Os
 CFLAGS += -g3 -MD -c
 CFLAGS += -mcpu=$(CPU) -mthumb -march=armv6-m -D$(DEVICE) --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
-CFLAGS += -DUART_IRQ
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
 CFLAGS += -Wall
 CFLAGS += -ffunction-sections -fdata-sections
