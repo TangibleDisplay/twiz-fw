@@ -44,6 +44,17 @@ int getchar()
     return c;
 }
 
+// Return true is byte has been received, false on timeout
+bool getchar_timeout(uint32_t timeout_ms, char *c)
+{
+    while (timeout_ms--) {
+        if (app_uart_get((uint8_t *)c) == NRF_SUCCESS)
+            return true;
+        nrf_delay_ms(1);
+    }
+    return false;
+}
+
 #else
 
 #include "simple_uart.h"
@@ -61,6 +72,12 @@ int putchar(int c)
 
 int getchar() {
     return simple_uart_get();
+}
+
+// Return NRF_SUCCESS on success, -1 on timeout
+bool getchar_timeout(uint32_t timeout_ms, char *c)
+{
+    return simple_uart_get_with_timeout(timeout_ms, (uint8_t *)c);
 }
 
 #endif
