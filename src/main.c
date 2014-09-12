@@ -1,8 +1,4 @@
-#include <stdint.h>
-#include <string.h>
 #include "uart.h"
-#include "boards.h"
-#include "nordic_common.h"
 #include "mpu9150.h"
 #include "leds.h"
 #include "low_res_timer.h"
