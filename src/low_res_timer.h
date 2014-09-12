@@ -8,6 +8,5 @@
 
 void low_res_timer_init(void);
 void low_res_timer_start(void);
-void imu_timer_handler(void * p_context);
 
 #endif

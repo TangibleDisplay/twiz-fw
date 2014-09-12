@@ -15,18 +15,6 @@
 #include "twi_scheduler.h"
 
 
-// IMU timer handler
-void imu_timer_handler(void * p_context)
-{
-    UNUSED_PARAMETER(p_context);
-
-    // update imu data to advertize it
-	advertising_init();
-    // Visual debug : toggle LED 0
-    nrf_gpio_pin_toggle(LED_0);
-}
-
-
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -34,7 +22,7 @@ int main(void)
     // Initialize
     leds_init();
     ble_stack_init();
-    scheduler_init();
+    //scheduler_init();
     low_res_timer_init();
     high_res_timer_init();
     uart_init();
