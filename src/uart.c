@@ -37,6 +37,12 @@ int putchar(int c)
     return 0;
 }
 
+int getchar()
+{
+    uint8_t c;
+    while(app_uart_get(&c) != NRF_SUCCESS);
+    return c;
+}
 
 #else
 
@@ -51,6 +57,10 @@ int putchar(int c)
 {
     simple_uart_put(c);
     return 0;
+}
+
+int getchar() {
+    return simple_uart_get();
 }
 
 #endif
