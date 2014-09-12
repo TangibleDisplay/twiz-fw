@@ -9,7 +9,8 @@
 #include "printf.h"
 
 #define MAGIC 0xB28AD7CE
-#define DATA_SIZE (MAX(sizeof(calibration_data_t), PSTORAGE_MIN_BLOCK_SIZE))
+#define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
+#define DATA_SIZE ROUND_UP((MAX(sizeof(calibration_data_t), PSTORAGE_MIN_BLOCK_SIZE)), 4)
 
 // Last operation status
 static uint32_t status;
