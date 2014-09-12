@@ -15,6 +15,7 @@ C_SOURCE_FILES += twi_gap.c
 C_SOURCE_FILES += twi_sys_evt.c
 C_SOURCE_FILES += twi_conn.c
 C_SOURCE_FILES += twi_scheduler.c
+C_SOURCE_FILES += twi_calibration_store.c
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c
