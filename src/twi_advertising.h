@@ -14,7 +14,7 @@
  * Must be between 0x0001 and 0x3FFF.
  * Set to 0 if no timeout.
  */
-#define APP_ADV_TIMEOUT_IN_SECONDS      180
+#define APP_ADV_TIMEOUT_IN_SECONDS      0
 
 /*
  * Name of device. Will be included in the advertising data.
