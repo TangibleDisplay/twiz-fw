@@ -11,12 +11,12 @@
 
 void advertising_init(void) {
   ble_advdata_t advdata;
-  uint8_t       flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
+  uint8_t flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
 
   // Set advertising data
   memset(&advdata, 0, sizeof(advdata));
   advdata.name_type               = BLE_ADVDATA_FULL_NAME;
-  advdata.include_appearance      = true;
+  advdata.include_appearance      = false;
   advdata.flags.size              = sizeof(flags);
   advdata.flags.p_data            = &flags;
 
