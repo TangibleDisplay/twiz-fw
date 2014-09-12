@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 typedef struct imu_data_s {
-    int16_t imu[4]; // w/h, x, y, z (quaternions / heading+accel3d)
+    int16_t accel[3]; // x, y, z
+    int16_t euler[3]; // yaw, pitch, roll
 } imu_data_t;
 
 void mpu9150_update(void);

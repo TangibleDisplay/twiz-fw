@@ -208,6 +208,8 @@ static float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 // vector to hold integral error for Mahony method
 static float eInt[3] = {0.0f, 0.0f, 0.0f};
 
+// set global variables : yaw, pitch and roll
+static inline void update_euler_from_quaternions(void);
 
 void ak8975a_init()
 {
@@ -908,33 +910,38 @@ void mpu9150_update()
     if((Now-lastDisplay) > 20000) {
         lastDisplay = Now;
 
-        // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
-        // In this coordinate system, the positive z-axis is down toward Earth.
-        // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
-        // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
-        // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
-        // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
-        // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
-        // applied in the correct order which for this configuration is yaw, pitch, and then roll.
-        // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-
-        yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
-        pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-        roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-        pitch *= 180.0f / PI;
-        yaw   *= 180.0f / PI;
-        yaw   -= 4.11f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
-        roll  *= 180.0f / PI;
-        //printf("Yaw, Pitch, Roll: %3.2f %3.2f %3.2f\n\r", yaw, pitch, roll);
+        //update_euler_from_quaternions();
     }
 }
 
+// set global variables : yaw, pitch and roll
+static inline void update_euler_from_quaternions(void)
+{
+    // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
+    // In this coordinate system, the positive z-axis is down toward Earth.
+    // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking
+    // down on the sensor positive yaw is counterclockwise.
+    // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
+    // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
+    // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
+    // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
+    // applied in the correct order which for this configuration is yaw, pitch, and then roll.
+    // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
+    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
+    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+    pitch *= 180.0f / PI;
+    yaw   *= 180.0f / PI;
+    yaw   -= 4.11f; // Declination at Paris, 2014
+    roll  *= 180.0f / PI;
+    //printf("Yaw, Pitch, Roll: %3.2f %3.2f %3.2f\n\r", yaw, pitch, roll);
+}
 
 void imu_init(void)
 {
     // Init I2C
     i2c_init();
-    nrf_delay_ms(300);
+    nrf_delay_ms(300); // TODO: check if it can be faster
 
     // Init MPU
     mpu9150_reset();
@@ -948,14 +955,15 @@ void imu_init(void)
 
 imu_data_t * get_imu_data(imu_data_t * imu_data)
 {
-    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
-    yaw   *= 180.0f / PI;
-    yaw   -= 4.11f; // Declination at Paris, 2014
+    imu_data->accel[0] = (int16_t) ax;    // accel x
+    imu_data->accel[1] = (int16_t) ay;    // accel y
+    imu_data->accel[2] = (int16_t) az;    // accel z
 
-    imu_data->imu[0] = (int16_t) yaw;   // heading
-    imu_data->imu[1] = (int16_t) ax;    // accel x
-    imu_data->imu[2] = (int16_t) ay;    // accel y
-    imu_data->imu[3] = (int16_t) az;    // accel z
+    update_euler_from_quaternions();
+
+    imu_data->euler[0] = (int16_t) yaw;   // heading
+    imu_data->euler[1] = (int16_t) pitch;
+    imu_data->euler[2] = (int16_t) roll;
 
     return imu_data;
 }
