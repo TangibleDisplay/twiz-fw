@@ -36,6 +36,8 @@ int main(void)
     low_res_timer_start();
     advertising_start();
 
+    // Try load calibration data from flash
+
     // Enter main loop
     for (;;)
     {

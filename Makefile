@@ -5,6 +5,7 @@ C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
 C_SOURCE_FILES += twi_hw_master_sd.c
 C_SOURCE_FILES += i2c_wrapper.c
 C_SOURCE_FILES += mpu9150.c
+C_SOURCE_FILES += fusion.c
 C_SOURCE_FILES += errors.c
 C_SOURCE_FILES += low_res_timer.c
 C_SOURCE_FILES += high_res_timer.c
