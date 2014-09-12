@@ -19,8 +19,11 @@ static void imu_timer_handler(void * p_context)
 
     // update imu data to advertize it
 	advertising_init();
-    // Visual debug : toggle LED 0
-    nrf_gpio_pin_toggle(LED_0);
+
+    // Visual debug : toggle LED 0 with a 10% duty cycle
+    static int cpt = 0;
+    nrf_gpio_pin_write(LED_0, (cpt == 0));
+    cpt = (cpt < 10) ? cpt + 1 : 0;
 }
 
 // Init low res timer
