@@ -39,7 +39,6 @@ int main(void)
     // Enter main loop
     for (;;)
     {
-        app_sched_execute();
         mpu9150_update();
     }
 }
