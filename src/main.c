@@ -18,7 +18,6 @@ int main(void)
     // Initialize
     leds_init();
     ble_stack_init();
-    //scheduler_init();
     low_res_timer_init();
     high_res_timer_init();
     uart_init();
