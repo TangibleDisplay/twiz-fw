@@ -10,6 +10,7 @@ void imu_init(void);
 void imu_update(void);
 imu_data_t * get_imu_data(imu_data_t * imu_data);
 void imu_calibrate(void);
+bool imu_load_calibration_data(void);
 
 
 // Calibration data :
@@ -21,12 +22,14 @@ void imu_calibrate(void);
 //      biases...
 
 typedef struct {
+    uint32_t magic1;
     float mag_scale[9]; // 3x3 matrix, coefs stored row by row
     float mag_offset[3];
     float gyro_bias[3];
     float accel_bias[3];
-} mag_calibration_t;
+    uint32_t magic2;
+} calibration_data_t;
 
-extern mag_calibration_t cal;
+extern calibration_data_t cal;
 
 #endif

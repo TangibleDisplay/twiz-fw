@@ -3,15 +3,7 @@
 
 #include <stdint.h>
 #include "pstorage.h"
-
-typedef struct {
-    uint32_t magic1;
-    float gyro_bias[3];
-    float accel_bias[3];
-    float mag_scale[9];
-    float mag_offset[3];
-    uint32_t magic2;
-} calibration_data_t;
+#include "imu.h"
 
 void calibration_store_init(void);
 uint32_t calibration_store_load(calibration_data_t *data);

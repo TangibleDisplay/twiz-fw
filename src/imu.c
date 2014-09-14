@@ -1,12 +1,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 #include "imu.h"
 #include "mpu9150.h"
 #include "ak8975a.h"
 #include "fusion.h"
 #include "high_res_timer.h"
 #include "twi_advertising.h"
+#include "twi_calibration_store.h"
 #include "fusion.h"
 #include "i2c_wrapper.h"
 #include "app_util.h"
@@ -24,10 +26,10 @@ static float pitch, yaw, roll;
 static float ax, ay, az, gx, gy, gz, mx, my, mz;
 
 // Calibration data
-mag_calibration_t cal = {.mag_scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
-                         .mag_offset = {0, 0, 0},
-                         .accel_bias = {0, 0, 0},
-                         .gyro_bias = {0, 0, 0},
+calibration_data_t cal = {.mag_scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
+                          .mag_offset = {0, 0, 0},
+                          .accel_bias = {0, 0, 0},
+                          .gyro_bias = {0, 0, 0},
 };
 
 
@@ -134,13 +136,24 @@ imu_data_t * get_imu_data(imu_data_t * imu_data)
 
 bool imu_load_calibration_data()
 {
-    // XXX FIXME : TODO
+    calibration_data_t temp;
+    if (calibration_store_load(&temp)) {
+        memcpy(&cal, &temp, sizeof cal);
+        return true;
+    }
+    else {
+        printf("No valid calibration found in flash.\r\n");
+        printf("YOU SHOULD REALLY CONSIDER RUNNING THE CALIBRATION PROCEDURE !!!\r\n");
+        for(int i=0; i<200; i++)
+            leds_blink(10);
+        return false;
+    }
 }
 
 
 void imu_store_calibration_data()
 {
-    // XXX FIXME : TODO
+    calibration_store_write(&cal);
 }
 
 
@@ -224,6 +237,7 @@ void imu_calibrate()
             break;
 
         case QUIT:
+            printf("End of calibration procedure\r\n");
             return;
         }
     }

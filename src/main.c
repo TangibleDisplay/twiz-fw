@@ -37,7 +37,20 @@ int main(void)
     advertising_start();
 
     // Try load calibration data from flash
-    //imu_load_calibration_data();
+    imu_load_calibration_data();
+
+    // Wait for 2 seconds for a 'c' on the serial port.
+    // If we get a 'c', then start calibration procedure
+    printf("Press c within 2 seconds to start calibration procedure\r\n");
+    static char c;
+    for (int i=0; i<2000; i++) {
+        if (getchar_timeout(1, &c))
+            if(c=='c') {
+                printf("Starting calibration procedure\r\n");
+                printf("Please close minicom and start python calibration GUI\r\n");
+                imu_calibrate();
+            }
+    }
 
     // Enter main loop
     for (;;)

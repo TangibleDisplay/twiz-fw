@@ -11,7 +11,7 @@
 #define MAGIC1 0xB28AD7CE
 #define MAGIC2 0x3827BEDA
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
-#define DATA_SIZE ROUND_UP((MAX(sizeof(calibration_data_t), PSTORAGE_MIN_BLOCK_SIZE)), 4)
+#define DATA_SIZE ROUND_UP((MAX(sizeof cal, PSTORAGE_MIN_BLOCK_SIZE)), 4)
 
 // Last operation status
 static uint32_t status;
