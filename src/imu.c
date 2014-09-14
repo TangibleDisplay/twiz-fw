@@ -11,14 +11,24 @@
 #include "i2c_wrapper.h"
 #include "app_util.h"
 #include "softdevice_handler.h"
+#include "uart.h"
+#include "printf.h"
+#include "leds.h"
 
-// vector to hold quaternion and AHRS results
+// Vector to hold quaternion and AHRS results
 // XXX FIXME : need a mutex !
 static float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 static float pitch, yaw, roll;
 
-// variables to hold latest sensor data values
+// Variables to hold latest sensor data values
 static float ax, ay, az, gx, gy, gz, mx, my, mz;
+
+// Calibration data
+mag_calibration_t cal = {.mag_scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
+                         .mag_offset = {0, 0, 0},
+                         .accel_bias = {0, 0, 0},
+                         .gyro_bias = {0, 0, 0},
+};
 
 
 // XXX FIXME : this need to be split up in several functions
@@ -31,21 +41,18 @@ void imu_update()
     // If intPin goes high or NEW_DATA register is set, then all data registers have new data
     // XXX FIXME : should do this in interrupt service
     if (mpu9150_new_data()) {
-        static int16_t data[7];
+        static float data[6];
 
         // Read accel, temp and gyro data
         mpu9150_read_data(data);
 
-        // Biases are removed by hardware if calibrate routine has been called
-        ax = (float)data[0];
-        ay = (float)data[1];
-        az = (float)data[2];
+        ax = data[0];
+        ay = data[1];
+        az = data[2];
 
-        // Biases are removed by hardware if calibrate routine has been called.
-        // Gyro values need to be scaled. Here we are at 250dps for full scale
-        gx = (float)data[4]*250.0/32768.0*M_PI/180.0;
-        gy = (float)data[5]*250.0/32768.0*M_PI/180.0;
-        gz = (float)data[6]*250.0/32768.0*M_PI/180.0;
+        gx = data[3];
+        gy = data[4];
+        gz = data[5];
 
         // Get mag data
         ak8975a_read_data(&mx, &my, &mz);
@@ -124,7 +131,100 @@ imu_data_t * get_imu_data(imu_data_t * imu_data)
     return imu_data;
 }
 
+
 bool imu_load_calibration_data()
 {
+    // XXX FIXME : TODO
+}
 
+
+void imu_store_calibration_data()
+{
+    // XXX FIXME : TODO
+}
+
+
+// Calibration protocol
+#define NEW_MAG            ('m')
+#define SEND_CAL           ('s')
+#define WRITE_FLASH        ('f')
+#define START_CAL_ACC_GYRO ('a')
+#define END_CAL_ACC_GYRO   ('s')
+#define QUIT               ('q')
+
+void imu_calibrate()
+{
+    /* Offline calibration for MPU9150 : the user is asked (through the python
+       calibration GUI) to move the TWIMU in all directions or to let is standing still horizontaly.
+       The python GUI interacts with user through these simple commands :
+         "m" : aks for a new raw mag value.
+         "s" : sends 12 lines with each of the mag calibration coefficients in signed decimal ASCII form
+         "f" : asks to store the calibration data in flash
+         "a" : start accel and gyroscope biases calulation (IMU must be standing still and horizontaly)
+         "s" : sent by nRF to signal the end of accel and gyroscope biases calulation
+         "q" : stops calibration routine
+    */
+
+#define BUF_SIZE 48
+    static char buf[BUF_SIZE] = {0};
+    static int16_t data[3];
+    float *val = NULL;
+
+    while(1) {
+        getline(BUF_SIZE, buf);
+        printf("%s\r\n", buf);
+
+        switch (buf[0]) {
+        case NEW_MAG :
+            // If new raw mag values are asked for, then send them (ending with \r\n)
+            ak8975a_read_raw_data(data);
+            printf("%d %d %d\r\n", data[0], data[1], data[2]);
+            break;
+
+        case SEND_CAL:
+            // Get 9 complete ASCII lines with the scale matrix values
+            val = &cal.mag_scale[0];
+            for(int i=0; i<9; i++) {
+                getline(BUF_SIZE, buf);
+                *val++ = atof(buf);
+            }
+            // Get 3 complete ASCII lines with the vector offset values
+            val = &cal.mag_offset[0];
+            for(int i=0; i<3; i++) {
+                getline(BUF_SIZE, buf);
+                *val++ = atof(buf);
+            }
+
+            printf("Mag scale = %f %f %f\r\n%f %f %f\r\n%f %f %f\r\n",
+                   cal.mag_scale[0], cal.mag_scale[1], cal.mag_scale[2],
+                   cal.mag_scale[3], cal.mag_scale[4], cal.mag_scale[5],
+                   cal.mag_scale[6], cal.mag_scale[7], cal.mag_scale[8]);
+            printf("Mag offset = %f %f %f\r\n",
+                   cal.mag_offset[0], cal.mag_offset[1], cal.mag_offset[2]);
+            break;
+
+        case START_CAL_ACC_GYRO:
+            // Turn of LED
+            led_on();
+            // Start bias measures
+            mpu9150_measure_biases();
+            // Turn off LED
+            led_off();
+            // Send stop command
+            printf("%c\r\n", END_CAL_ACC_GYRO);
+            printf("Accel bias = %f %f %f\r\n",
+                   cal.accel_bias[0], cal.accel_bias[1], cal.accel_bias[2]);
+            printf("Gyro bias = %f %f %f\r\n",
+                   cal.gyro_bias[0], cal.gyro_bias[1], cal.gyro_bias[2]);
+            break;
+
+        case WRITE_FLASH :
+            // Store calibration values in flash
+            imu_store_calibration_data();
+            break;
+
+        case QUIT:
+            return;
+        }
+    }
 }

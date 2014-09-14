@@ -38,7 +38,6 @@ int main(void)
 
     // Try load calibration data from flash
     //imu_load_calibration_data();
-    ak8975a_calibrate();
 
     // Enter main loop
     for (;;)

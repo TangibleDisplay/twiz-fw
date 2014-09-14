@@ -5,5 +5,7 @@
 
 void leds_init(void);
 void leds_blink(uint16_t ms);
+void led_on(void);
+void led_off(void);
 
 #endif

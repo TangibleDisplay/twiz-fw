@@ -8,8 +8,7 @@
 #include "nrf_delay.h"
 #include "nordic_common.h"
 #include "app_error.h"
-#include "uart.h"
-
+#include "imu.h"
 
 //Magnetometer Registers
 #define AK8975A_ADDRESS  0x0C
@@ -29,11 +28,6 @@
 #define AK8975A_ASAX     0x10  // Fuse ROM x-axis sensitivity adjustment value
 #define AK8975A_ASAY     0x11  // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ     0x12  // Fuse ROM z-axis sensitivity adjustment value
-
-// Calibration values
-mag_calibration_t mag_cal = {.scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
-                             .offset = {0, 0, 0},
-};
 
 // Init magnetometer.
 // MUST be called AFTER mpu9150 init !
@@ -55,7 +49,7 @@ void ak8975a_init()
     nrf_delay_ms(10);
 }
 
-static void ak8975a_read_raw_data(int16_t *val)
+void ak8975a_read_raw_data(int16_t *val)
 {
  start:
     // Launch the first acquisition
@@ -88,76 +82,10 @@ void ak8975a_read_data(float *mx, float *my, float *mz)
 {
     static int16_t data[3];
     ak8975a_read_raw_data(data);
-    float x = data[0] - mag_cal.offset[0];
-    float y = data[1] - mag_cal.offset[1];
-    float z = data[2] - mag_cal.offset[2];
-    *mx = x*mag_cal.scale[0] + y*mag_cal.scale[1] + z*mag_cal.scale[2];
-    *my = x*mag_cal.scale[3] + y*mag_cal.scale[4] + z*mag_cal.scale[5];
-    *mz = x*mag_cal.scale[6] + y*mag_cal.scale[7] + z*mag_cal.scale[8];
-}
-
-
-// Calibration protocol
-#define NEW_VAL     ('r')
-#define CAL_VAL     ('v')
-#define WRITE_FLASH ('f')
-#define QUIT        ('q')
-
-void ak8975a_calibrate()
-{
-    /* Offline calibration for soft and hard iron : the user is asked (through the python
-       calibration GUI) to move the TWIMU in all directions. The python GUI interacts with use
-       through these simple commands :
-         "r" : aks for a new raw mag value.
-         "v" : sends 12 lines with each of the calibration coefficients in signed decimal ASCII form
-         "f" : asks to store the calibration data in flash
-         "q" : stops calibration routine
-    */
-
-    static int16_t data[3];
-#define BUF_SIZE 48
-    static char buf[BUF_SIZE] = {0};
-    float *val = NULL;
-
-    while(1) {
-        getline(BUF_SIZE, buf);
-        printf("%s\r\n", buf);
-
-        switch (buf[0]) {
-        case NEW_VAL :
-            // If new raw mag values are asked for, then send them (ending with \r\n)
-            ak8975a_read_raw_data(data);
-            printf("%d %d %d\r\n", data[0], data[1], data[2]);
-            break;
-
-        case CAL_VAL:
-            // Get 9 complete ASCII lines with the scale matrix values
-            val = &mag_cal.scale[0];
-            for(int i=0; i<9; i++) {
-                getline(BUF_SIZE, buf);
-                *val++ = atof(buf);
-            }
-            // Get 3 complete ASCII lines with the vector offset values
-            val = &mag_cal.offset[0];
-            for(int i=0; i<3; i++) {
-                getline(BUF_SIZE, buf);
-                *val++ = atof(buf);
-            }
-
-            printf("%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n",
-                   mag_cal.scale[0], mag_cal.scale[1], mag_cal.scale[2],
-                   mag_cal.scale[3], mag_cal.scale[4], mag_cal.scale[5],
-                   mag_cal.scale[6], mag_cal.scale[7], mag_cal.scale[8],
-                   mag_cal.offset[0], mag_cal.offset[1], mag_cal.offset[2]);
-            break;
-
-        case WRITE_FLASH :
-            // Store values in flash
-            // XXX FIXME : TODO !
-            break;
-
-        case QUIT:
-            return;
-        }
-    }
+    float x = data[0] - cal.mag_offset[0];
+    float y = data[1] - cal.mag_offset[1];
+    float z = data[2] - cal.mag_offset[2];
+    *mx = x*cal.mag_scale[0] + y*cal.mag_scale[1] + z*cal.mag_scale[2];
+    *my = x*cal.mag_scale[3] + y*cal.mag_scale[4] + z*cal.mag_scale[5];
+    *mz = x*cal.mag_scale[6] + y*cal.mag_scale[7] + z*cal.mag_scale[8];
 }

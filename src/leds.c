@@ -3,6 +3,16 @@
 #include "high_res_timer.h"
 #include "boards.h"
 
+void led_on()
+{
+    nrf_gpio_pin_set(LED_0);
+}
+
+void led_off()
+{
+    nrf_gpio_pin_clear(LED_0);
+}
+
 void leds_init(void)
 {
     nrf_gpio_pin_clear(LED_0);

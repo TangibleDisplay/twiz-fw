@@ -14,6 +14,7 @@
 #include "printf.h"
 #include "nordic_common.h"
 #include "app_error.h"
+#include "imu.h"
 
 // Define registers per MPU6050, Register Map and Descriptions, Rev 4.2, 08/19/2013 6 DOF Motion sensor fusion device
 // Invensense Inc., www.invensense.com
@@ -219,8 +220,8 @@ void mpu9150_init()
 }
 
 
-// Read accel, temps and gyro values.
-void mpu9150_read_data(int16_t * values)
+// Read accel, temps and gyro raw values.
+static void mpu9150_read_raw_data(int16_t * values)
 {
     static uint8_t data[14];
 
@@ -232,8 +233,8 @@ void mpu9150_read_data(int16_t * values)
     // Hence, the "-...." on the accel values
     for(int i=0; i<3; i++)
         values[i] = -(int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
-    for(int i=3; i<7; i++)
-        values[i] = (int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
+    for(int i=3; i<6; i++)
+        values[i] = (int16_t)(((int16_t)data[2*i+1] << 8) | data[2*i+2]) ;
 
 #if 0
     for (int j=0; j<14; j++)
@@ -248,211 +249,93 @@ void mpu9150_read_data(int16_t * values)
 #endif
 }
 
+// Read accel, temps and gyro raw values.
+void mpu9150_read_data(float * values)
+{
+    int16_t data[6];
+
+    // Read raw data
+    mpu9150_read_raw_data(data);
+
+    // Apply correction (bias and gain for gyroscope)
+    for(int i=0; i<3; i++) {
+        values[i] = data[i] - cal.accel_bias[i];
+        values[i+3] = (data[i+3] - cal.gyro_bias[i]) *32768.0 / 250.0 * M_PI / 180.;
+    }
+}
+
+
+
+// Return true if a new measure is available
 bool mpu9150_new_data()
 {
     return i2c_read_byte(MPU9150_ADDRESS, INT_STATUS) & 0x01;
 }
 
 
-// Function which accumulates gyro and accelerometer data after device initialization. It calculates the average
-// of the at-rest readings and then loads the resulting offsets into accelerometer and gyro bias registers.
-void mpu9150_calibrate()
+// Function which accumulates gyro and accelerometer data. It calculates the average
+// of the at-rest readings and then store them in gyro_bias and accel_bias variables.
+void mpu9150_measure_biases()
 {
-    static uint8_t data[14]; // data array to hold accelerometer and gyro x, y, z, data
-    int ii, meas_count;
-    int32_t gyro_bias[3] = {0, 0, 0}, accel_bias[3] = {0, 0, 0};
-    static int32_t gyro_temp[3];
-    static int32_t accel_temp[3];
-    static float gyroBias[3] = {0, 0, 0}, accelBias[3] = {0, 0, 0}; // Bias corrections for gyro and accelerometer
-    static bool calibrated = false;
+    static float data[6]; // data array to hold accelerometer and gyro x, y, z data
 
-    printf("Calibrating MPU9150. Please don't move !\r\n");
+    // Reset chip to reset HW cal register to factory trim
+    mpu9150_reset();
+    mpu9150_init();
 
-    // If already calibrated, then reset chip to reset HW cal register to factory trim
-    if(calibrated) {
-        mpu9150_reset();
-        mpu9150_init();
-    }
-    calibrated = true;
+    // Reset calibration data
+    cal.accel_bias[0] = 0;
+    cal.accel_bias[1] = 0;
+    cal.accel_bias[2] = 0;
+    cal.gyro_bias[0] = 0;
+    cal.gyro_bias[1] = 0;
+    cal.gyro_bias[2] = 0;
 
     // Configure MPU9150 gyro and accelerometer for bias calculation
-    i2c_write_byte(MPU9150_ADDRESS, GYRO_CONFIG, 0x00);  // Set gyro full-scale to 250 degrees per second, maximum sensitivity
-    i2c_write_byte(MPU9150_ADDRESS, ACCEL_CONFIG, 0x00); // Set accelerometer full-scale to 2 g, maximum sensitivity
+    // Set gyro full-scale to 250 degrees per second, maximum sensitivity
+    i2c_write_byte(MPU9150_ADDRESS, GYRO_CONFIG, 0x00);
+    // Set accelerometer full-scale to 2 g, maximum sensitivity
+    i2c_write_byte(MPU9150_ADDRESS, ACCEL_CONFIG, 0x00);
     nrf_delay_ms(200);
 
-    uint16_t  gyrosensitivity  = 131;   // = 131 LSB/degrees/sec
-    uint16_t  accelsensitivity = 16384;  // = 16384 LSB/g
-
     // Accumulate 200 measures each 5 ms (200Hz sample rate)
-    meas_count = 200;
+    const int meas_count = 200;
     for (int i = 0; i<meas_count; i++) {
+        // Pause for 5ms
         nrf_delay_ms(5);
 
-        // Burst read to ensure that accel, temp and gyro measurements are taken at the same time
-        i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
+        // Get new measurement
+        mpu9150_read_data(data);
 
-        // Debug
 #if 0
+        // Debug
         for (int j=0; j<14; j=j+2)
             printf("%02x%02x ", data[j], data[j+1]);
         printf("\r\n");
 #endif
-        // Form signed 16-bit integer for each data
-        accel_temp[0] = (int16_t) (((int16_t)data[0] << 8) | data[1]  ) ;
-        accel_temp[1] = (int16_t) (((int16_t)data[2] << 8) | data[3]  ) ;
-        accel_temp[2] = (int16_t) (((int16_t)data[4] << 8) | data[5]  ) ;
-        gyro_temp[0]  = (int16_t) (((int16_t)data[8] << 8) | data[9]  ) ;
-        gyro_temp[1]  = (int16_t) (((int16_t)data[10] << 8) | data[11]  ) ;
-        gyro_temp[2]  = (int16_t) (((int16_t)data[12] << 8) | data[13]) ;
 
         // Sum individual signed 16-bit biases to get accumulated signed 32-bit biases
-        accel_bias[0] += (int32_t) accel_temp[0];
-        accel_bias[1] += (int32_t) accel_temp[1];
-        accel_bias[2] += (int32_t) accel_temp[2];
-        gyro_bias[0]  += (int32_t) gyro_temp[0];
-        gyro_bias[1]  += (int32_t) gyro_temp[1];
-        gyro_bias[2]  += (int32_t) gyro_temp[2];
+        cal.accel_bias[0] += data[0];
+        cal.accel_bias[1] += data[1];
+        cal.accel_bias[2] += data[2];
+        cal.gyro_bias[0]  += data[3];
+        cal.gyro_bias[1]  += data[4];
+        cal.gyro_bias[2]  += data[5];
 
     }
     // Normalize sums to get average count biases
-    accel_bias[0] /= (int32_t) meas_count;
-    accel_bias[1] /= (int32_t) meas_count;
-    accel_bias[2] /= (int32_t) meas_count;
-    gyro_bias[0]  /= (int32_t) meas_count;
-    gyro_bias[1]  /= (int32_t) meas_count;
-    gyro_bias[2]  /= (int32_t) meas_count;
+    cal.accel_bias[0] /= meas_count;
+    cal.accel_bias[1] /= meas_count;
+    cal.accel_bias[2] /= meas_count;
+    cal.gyro_bias[0]  /= meas_count;
+    cal.gyro_bias[1]  /= meas_count;
+    cal.gyro_bias[2]  /= meas_count;
 
     // Remove gravity from the z-axis accelerometer bias calculation
-    if(accel_bias[2] > 0L) {accel_bias[2] -= (int32_t) accelsensitivity;}
-    else {accel_bias[2] += (int32_t) accelsensitivity;}
+    const float  accelsensitivity = 16384.;  // = 16384 LSB/g
 
-    // Construct the gyro biases for push to the hardware gyro bias registers, which are reset to zero upon device startup
-    data[0] = (-gyro_bias[0]/4  >> 8) & 0xFF; // Divide by 4 to get 32.9 LSB per deg/s to conform to expected bias input format
-    data[1] = (-gyro_bias[0]/4)       & 0xFF; // Biases are additive, so change sign on calculated average gyro biases
-    data[2] = (-gyro_bias[1]/4  >> 8) & 0xFF;
-    data[3] = (-gyro_bias[1]/4)       & 0xFF;
-    data[4] = (-gyro_bias[2]/4  >> 8) & 0xFF;
-    data[5] = (-gyro_bias[2]/4)       & 0xFF;
-
-    /// Push gyro biases to hardware registers
-    i2c_write_byte(MPU9150_ADDRESS, XG_OFFS_USRH, data[0]);
-    i2c_write_byte(MPU9150_ADDRESS, XG_OFFS_USRL, data[1]);
-    i2c_write_byte(MPU9150_ADDRESS, YG_OFFS_USRH, data[2]);
-    i2c_write_byte(MPU9150_ADDRESS, YG_OFFS_USRL, data[3]);
-    i2c_write_byte(MPU9150_ADDRESS, ZG_OFFS_USRH, data[4]);
-    i2c_write_byte(MPU9150_ADDRESS, ZG_OFFS_USRL, data[5]);
-
-    // Construct gyro bias in deg/s for later manual subtraction
-    gyroBias[0] = (float) gyro_bias[0]/(float) gyrosensitivity;
-    gyroBias[1] = (float) gyro_bias[1]/(float) gyrosensitivity;
-    gyroBias[2] = (float) gyro_bias[2]/(float) gyrosensitivity;
-
-    // Construct the accelerometer biases for push to the hardware accelerometer bias registers. These registers contain
-    // factory trim values which must be added to the calculated accelerometer biases; on boot up these registers will hold
-    // non-zero values. In addition, bit 0 of the lower byte must be preserved since it is used for temperature
-    // compensation calculations. Accelerometer bias registers expect bias input as 2048 LSB per g, so that
-    // the accelerometer biases calculated above must be divided by 8.
-
-    int32_t accel_bias_reg[3] = {0, 0, 0}; // A place to hold the factory accelerometer trim biases
-    i2c_read_bytes(MPU9150_ADDRESS, XA_OFFSET_H, 2, data); // Read factory accelerometer trim values
-    accel_bias_reg[0] = (int16_t) ((int16_t)data[0] << 8) | data[1];
-    i2c_read_bytes(MPU9150_ADDRESS, YA_OFFSET_H, 2, data);
-    accel_bias_reg[1] = (int16_t) ((int16_t)data[0] << 8) | data[1];
-    i2c_read_bytes(MPU9150_ADDRESS, ZA_OFFSET_H, 2, data);
-    accel_bias_reg[2] = (int16_t) ((int16_t)data[0] << 8) | data[1];
-
-    uint32_t mask = 1uL; // Define mask for temperature compensation bit 0 of lower byte of accelerometer bias registers
-    uint8_t mask_bit[3] = {0, 0, 0}; // Define array to hold mask bit for each accelerometer bias axis
-
-    for(ii = 0; ii < 3; ii++)
-        // If temperature compensation bit is set, record that fact in mask_bit
-        mask_bit[ii] = accel_bias_reg[ii] & mask;
-
-    // Construct total accelerometer bias, including calculated average accelerometer bias from above
-    accel_bias_reg[0] -= (accel_bias[0]/8); // Subtract calculated averaged accelerometer bias scaled to 2048 LSB/g (16 g full scale)
-    accel_bias_reg[1] -= (accel_bias[1]/8);
-    accel_bias_reg[2] -= (accel_bias[2]/8);
-
-    data[0] = (accel_bias_reg[0] >> 8) & 0xFF;
-    data[1] = (accel_bias_reg[0])      & 0xFF;
-    data[1] = data[1] | mask_bit[0]; // preserve temperature compensation bit when writing back to accelerometer bias registers
-    data[2] = (accel_bias_reg[1] >> 8) & 0xFF;
-    data[3] = (accel_bias_reg[1])      & 0xFF;
-    data[3] = data[3] | mask_bit[1]; // preserve temperature compensation bit when writing back to accelerometer bias registers
-    data[4] = (accel_bias_reg[2] >> 8) & 0xFF;
-    data[5] = (accel_bias_reg[2])      & 0xFF;
-    data[5] = data[5] | mask_bit[2]; // preserve temperature compensation bit when writing back to accelerometer bias registers
-
-    // Push accelerometer biases to hardware registers
-    i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_H, data[0]);
-    i2c_write_byte(MPU9150_ADDRESS, XA_OFFSET_L_TC, data[1]);
-    i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_H, data[2]);
-    i2c_write_byte(MPU9150_ADDRESS, YA_OFFSET_L_TC, data[3]);
-    i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_H, data[4]);
-    i2c_write_byte(MPU9150_ADDRESS, ZA_OFFSET_L_TC, data[5]);
-
-    // Output scaled accelerometer biases for manual subtraction in the main program
-    accelBias[0] = (float)accel_bias[0]/(float)accelsensitivity;
-    accelBias[1] = (float)accel_bias[1]/(float)accelsensitivity;
-    accelBias[2] = (float)accel_bias[2]/(float)accelsensitivity;
-
-    printf("x gyro bias = %f\n\r", gyroBias[0]);
-    printf("y gyro bias = %f\n\r", gyroBias[1]);
-    printf("z gyro bias = %f\n\r", gyroBias[2]);
-    printf("x accel bias = %f\n\r", accelBias[0]);
-    printf("y accel bias = %f\n\r", accelBias[1]);
-    printf("z accel bias = %f\n\r", accelBias[2]);
-    printf("\r\n");
-
-    printf("Calibrating MPU9150 done.\r\n");
-}
-
-
-// Accelerometer and gyroscope self test; check calibration wrt factory settings
-// Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
-void mpu9150_selftest()
-{
-    static uint8_t rawData[4] = {0, 0, 0, 0};
-    static uint8_t selfTest[6];
-    static float factoryTrim[6];
-
-    // Configure the accelerometer for self-test
-    i2c_write_byte(MPU9150_ADDRESS, ACCEL_CONFIG, 0xF0); // Enable self test on all three axes and set accelerometer range to +/- 8 g
-    i2c_write_byte(MPU9150_ADDRESS, GYRO_CONFIG,  0xE0); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
-    nrf_delay_ms(500);  // Delay a while to let the device execute the self-test
-    rawData[0] = i2c_read_byte(MPU9150_ADDRESS, SELF_TEST_X); // X-axis self-test results
-    rawData[1] = i2c_read_byte(MPU9150_ADDRESS, SELF_TEST_Y); // Y-axis self-test results
-    rawData[2] = i2c_read_byte(MPU9150_ADDRESS, SELF_TEST_Z); // Z-axis self-test results
-    rawData[3] = i2c_read_byte(MPU9150_ADDRESS, SELF_TEST_A); // Mixed-axis self-test results
-    // Extract the acceleration test results first
-    selfTest[0] = (rawData[0] >> 3) | (rawData[3] & 0x30) >> 4 ; // XA_TEST result is a five-bit unsigned integer
-    selfTest[1] = (rawData[1] >> 3) | (rawData[3] & 0x0C) >> 4 ; // YA_TEST result is a five-bit unsigned integer
-    selfTest[2] = (rawData[2] >> 3) | (rawData[3] & 0x03) >> 4 ; // ZA_TEST result is a five-bit unsigned integer
-    // Extract the gyration test results first
-    selfTest[3] = rawData[0]  & 0x1F ; // XG_TEST result is a five-bit unsigned integer
-    selfTest[4] = rawData[1]  & 0x1F ; // YG_TEST result is a five-bit unsigned integer
-    selfTest[5] = rawData[2]  & 0x1F ; // ZG_TEST result is a five-bit unsigned integer
-    // Process results to allow final comparison with factory set values
-    factoryTrim[0] = (4096.0f*0.34f)*(pow( (0.92f/0.34f) , ((selfTest[0] - 1.0f)/30.0f))); // FT[Xa] factory trim calculation
-    factoryTrim[1] = (4096.0f*0.34f)*(pow( (0.92f/0.34f) , ((selfTest[1] - 1.0f)/30.0f))); // FT[Ya] factory trim calculation
-    factoryTrim[2] = (4096.0f*0.34f)*(pow( (0.92f/0.34f) , ((selfTest[2] - 1.0f)/30.0f))); // FT[Za] factory trim calculation
-    factoryTrim[3] =  ( 25.0f*131.0f)*(pow( 1.046f , (selfTest[3] - 1.0f) ));             // FT[Xg] factory trim calculation
-    factoryTrim[4] =  (-25.0f*131.0f)*(pow( 1.046f , (selfTest[4] - 1.0f) ));             // FT[Yg] factory trim calculation
-    factoryTrim[5] =  ( 25.0f*131.0f)*(pow( 1.046f , (selfTest[5] - 1.0f) ));             // FT[Zg] factory trim calculation
-
-    // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
-    // To get to percent, must multiply by 100 and subtract result from 100
-    for (int i = 0; i < 6; i++) {
-        selfTest[i] = 100.0f + 100.0f*(selfTest[i] - factoryTrim[i])/factoryTrim[i]; // Report percent differences
-    }
-
-    printf("x-axis self test: acceleration trim within %2.2f%% of factory value\n\r", selfTest[0]);
-    printf("y-axis self test: acceleration trim within %2.2f%% of factory value\n\r", selfTest[1]);
-    printf("z-axis self test: acceleration trim within %2.2f%% of factory value\n\r", selfTest[2]);
-    printf("x-axis self test: gyration trim within %2.2f%% of factory value\n\r", selfTest[3]);
-    printf("y-axis self test: gyration trim within %2.2f%% of factory value\n\r", selfTest[4]);
-    printf("z-axis self test: gyration trim within %2.2f%% of factory value\n\r", selfTest[5]);
-
-    // Re-init MPU
-    mpu9150_init();
+    if(cal.accel_bias[2] > 0L)
+        cal.accel_bias[2] -= accelsensitivity;
+    else
+        cal.accel_bias[2] += accelsensitivity;
 }
