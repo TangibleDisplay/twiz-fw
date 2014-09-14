@@ -162,6 +162,7 @@ void imu_store_calibration_data()
 #define START_CAL_ACC_GYRO ('a')
 #define END_CAL_ACC_GYRO   ('s')
 #define READ_CAL_DATA      ('r')
+#define READ_DATA          ('d')
 #define QUIT               ('q')
 
 void imu_calibrate()
@@ -173,7 +174,7 @@ void imu_calibrate()
          "s" : sends 12 lines with each of the mag calibration coefficients in signed decimal ASCII form
          "w" : asks to store the calibration data in flash
          "a" : start accel and gyroscope biases calulation (IMU must be standing still and horizontaly)
-         "s" : sent by nRF to signal the end of accel and gyroscope biases calulation
+         "s" : sent by nRF to signal the end of accel and gyroscope biases calculation
          "q" : stops calibration routine
          "r" : display calibration data
     */
@@ -252,6 +253,23 @@ void imu_calibrate()
         case QUIT:
             printf("End of calibration procedure\r\n");
             return;
+
+        default :
+            // Display all sensors data (with correction)
+            // If new raw mag values are asked for, then send them (ending with \r\n)
+            {
+                float mx, my, mz;
+                float acc_gyro_data[6];
+                ak8975a_read_data(&mx, &my, &mz);
+                mpu9150_read_data(acc_gyro_data);
+                printf("%f %f %f %f %f %f %f %f %f\r\n",
+                       acc_gyro_data[0], acc_gyro_data[1], acc_gyro_data[2],
+                       acc_gyro_data[3], acc_gyro_data[4], acc_gyro_data[5],
+                       mx, my, mz);
+            }
+            break;
+
+
         }
     }
 }

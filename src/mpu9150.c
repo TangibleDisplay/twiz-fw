@@ -234,7 +234,7 @@ static void mpu9150_read_raw_data(int16_t * values)
     for(int i=0; i<3; i++)
         values[i] = -(int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
     for(int i=3; i<6; i++)
-        values[i] = (int16_t)(((int16_t)data[2*i+1] << 8) | data[2*i+2]) ;
+        values[i] = (int16_t)(((int16_t)data[2*i+2] << 8) | data[2*i+3]) ;
 
 #if 0
     for (int j=0; j<14; j++)
@@ -260,7 +260,7 @@ void mpu9150_read_data(float * values)
     // Apply correction (bias and gain for gyroscope)
     for(int i=0; i<3; i++) {
         values[i] = data[i] - cal.accel_bias[i];
-        values[i+3] = (data[i+3] - cal.gyro_bias[i]) *32768.0 / 250.0 * M_PI / 180.;
+        values[i+3] = (data[i+3] - cal.gyro_bias[i]) * 250.0 * M_PI / 180. / 32768.0;
     }
 }
 
