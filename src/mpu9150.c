@@ -260,6 +260,7 @@ void mpu9150_read_data(float * values)
     // Apply correction (bias and gain for gyroscope)
     for(int i=0; i<3; i++) {
         values[i] = data[i] - cal.accel_bias[i];
+        // Convert gyro in rad/s
         values[i+3] = (data[i+3] - cal.gyro_bias[i]) * 250.0 * M_PI / 180. / 32768.0;
     }
 }
