@@ -583,7 +583,7 @@ imu_data_t * get_imu_data(imu_data_t * imu_data)
 
     imu_data->euler[0] = (int16_t) yaw;   // heading
     imu_data->euler[1] = (int16_t) pitch;
-//    imu_data->euler[2] = (int16_t) roll;
+    imu_data->euler[2] = (int16_t) roll;
 
     return imu_data;
 }
