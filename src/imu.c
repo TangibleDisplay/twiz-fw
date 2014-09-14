@@ -217,7 +217,7 @@ void imu_calibrate()
             break;
 
         case START_CAL_ACC_GYRO:
-            // Turn of LED
+            // Turn on LED
             led_on();
             // Start bias measures
             mpu9150_measure_biases();
