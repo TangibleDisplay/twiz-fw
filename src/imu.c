@@ -33,8 +33,6 @@ calibration_data_t cal = {.mag_scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
 };
 
 
-// XXX FIXME : this need to be split up in several functions
-// and calibration data need to be stored in flash
 void imu_update()
 {
     // Used to calculate integration interval
