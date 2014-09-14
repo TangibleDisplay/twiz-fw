@@ -1,5 +1,6 @@
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "twi_error.h"
 #include "pstorage.h"
 #include "twi_calibration_store.h"
@@ -45,7 +46,7 @@ void calibration_store_init()
 
 // Load calibration data. Verify that data is valid (magic is correct).
 // Returns 0 on success, -1 on invalid magic.
-uint32_t calibration_store_load(calibration_data_t *data)
+bool calibration_store_load(calibration_data_t *data)
 {
     APP_ERROR_CHECK(pstorage_load((uint8_t *)data,
                                   &flash_handle,
@@ -54,25 +55,25 @@ uint32_t calibration_store_load(calibration_data_t *data)
     if (data->magic1 != MAGIC1) {
         printf("Flash calibration data read : invalid magic1. Falling back to factory values.\r\n");
         printf("YOU SHOULD SERIOUSLY CONSIDER CALIBRATING THE IMU !!!\r\n");
-        return -1;
+        return false;
     }
 
     if (data->magic2 != MAGIC2) {
         printf("Flash calibration data read : invalid magic2. Falling back to factory values.\r\n");
         printf("YOU SHOULD SERIOUSLY CONSIDER CALIBRATING THE IMU !!!\r\n");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 // Store calibration data in flash
-uint32_t calibration_store_write(const calibration_data_t *cal_data) {
+void calibration_store_write(const calibration_data_t *cal_data) {
     uint32_t count;
 
     // First, make a static copy of calibration data (which shall be persistent during flash write)
     static calibration_data_t data;
-    memcpy((void*)&data, (void*)cal_data, sizeof cal_data);
+    memcpy((void*)&data, (void*)cal_data, sizeof(calibration_data_t));
 
     // Ensure magic is correct
     data.magic1 = MAGIC1;
@@ -95,6 +96,4 @@ uint32_t calibration_store_write(const calibration_data_t *cal_data) {
         pstorage_access_status_get(&count);
     } while (count != 0);
     APP_ERROR_CHECK(status);
-
-    return 0;
 }

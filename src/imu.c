@@ -160,9 +160,10 @@ void imu_store_calibration_data()
 // Calibration protocol
 #define NEW_MAG            ('m')
 #define SEND_CAL           ('s')
-#define WRITE_FLASH        ('f')
+#define WRITE_FLASH        ('w')
 #define START_CAL_ACC_GYRO ('a')
 #define END_CAL_ACC_GYRO   ('s')
+#define READ_CAL_DATA      ('r')
 #define QUIT               ('q')
 
 void imu_calibrate()
@@ -172,10 +173,11 @@ void imu_calibrate()
        The python GUI interacts with user through these simple commands :
          "m" : aks for a new raw mag value.
          "s" : sends 12 lines with each of the mag calibration coefficients in signed decimal ASCII form
-         "f" : asks to store the calibration data in flash
+         "w" : asks to store the calibration data in flash
          "a" : start accel and gyroscope biases calulation (IMU must be standing still and horizontaly)
          "s" : sent by nRF to signal the end of accel and gyroscope biases calulation
          "q" : stops calibration routine
+         "r" : display calibration data
     */
 
 #define BUF_SIZE 48
@@ -234,6 +236,19 @@ void imu_calibrate()
         case WRITE_FLASH :
             // Store calibration values in flash
             imu_store_calibration_data();
+            break;
+
+        case READ_CAL_DATA :
+            printf("Mag scale = \t%f %f %f\r\n\t\t%f %f %f\r\n\t\t%f %f %f\r\n",
+                   cal.mag_scale[0], cal.mag_scale[1], cal.mag_scale[2],
+                   cal.mag_scale[3], cal.mag_scale[4], cal.mag_scale[5],
+                   cal.mag_scale[6], cal.mag_scale[7], cal.mag_scale[8]);
+            printf("Mag offset = %f %f %f\r\n",
+                   cal.mag_offset[0], cal.mag_offset[1], cal.mag_offset[2]);
+            printf("Accel bias = %f %f %f\r\n",
+                   cal.accel_bias[0], cal.accel_bias[1], cal.accel_bias[2]);
+            printf("Gyro bias = %f %f %f\r\n",
+                   cal.gyro_bias[0], cal.gyro_bias[1], cal.gyro_bias[2]);
             break;
 
         case QUIT:
