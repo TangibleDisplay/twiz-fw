@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "ak8975a.h"
 #include "printf.h"
@@ -7,6 +8,7 @@
 #include "nrf_delay.h"
 #include "nordic_common.h"
 #include "app_error.h"
+#include "uart.h"
 
 
 //Magnetometer Registers
@@ -28,9 +30,10 @@
 #define AK8975A_ASAY     0x11  // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ     0x12  // Fuse ROM z-axis sensitivity adjustment value
 
-static float magCalibration[3] = {1., 1., 1.};
-static float magBias[3] = {0., 0., 0.};
-
+// Calibration values
+mag_calibration_t mag_cal = {.scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
+                             .offset = {0, 0, 0},
+};
 
 // Init magnetometer.
 // MUST be called AFTER mpu9150 init !
@@ -52,138 +55,109 @@ void ak8975a_init()
     nrf_delay_ms(10);
 }
 
-static int ak8975a_read_raw_data(int16_t *data)
+static void ak8975a_read_raw_data(int16_t *val)
 {
-    static bool running = false;
-    static uint8_t rawData[6];  // x/y/z gyro register data stored here
-    static int ret = 0;
+ start:
+    // Launch the first acquisition
+    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
+    //nrf_delay_ms(1);
 
-    if (running) {
-        // If there is a data available
-        if (i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST1) & 0x01) {
-            // If there is no overflow
-            if((i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST2) & 0x0C)==0) {
-                // Read the six raw data registers sequentially into data array
-                i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, rawData);
-                // Turn the MSB and LSB into a signed 16-bit value
-                // XXX FIXME : WARNING, magnetometer axis are not the same as the accel / gyro ones
-                // Thus : x <--> y, and z <--> -z
-                data[1] = ((int16_t)rawData[1])*256 | rawData[0];
-                data[0] = ((int16_t)rawData[3])*256 | rawData[2];
-                data[2] = -((int16_t)rawData[5])*256 | rawData[4];
-                ret = 0;
-            }
-            else
-                ret = -1;
-            // Launch a new acquisition
-            i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
-            return ret;
-        }
+    // Wait for a data to become available
+    while ((i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST1) & 0x01) == 0);
+
+    // If there is no overflow
+    if((i2c_read_byte(AK8975A_ADDRESS, AK8975A_ST2) & 0x0C)==0) {
+        int16_t v[3];
+        // Read the six raw data registers sequentially into data array
+        // WARNING : code valid for little endian only !
+        i2c_read_bytes(AK8975A_ADDRESS, AK8975A_XOUT_L, 6, (uint8_t *)v);
+
+        // WARNING, magnetometer axis are not the same as the accel / gyro ones
+        // Thus : x <--> y, and z <--> -z
+        val[0] = v[1];
+        val[1] = v[0];
+        val[2] = -v[2];
+        return;
     }
-    else {
-        // Else launch the first acquisition
-        i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x01);
-        running = true;
-    }
-    return -1;
+
+    goto start;
 }
+
 
 void ak8975a_read_data(float *mx, float *my, float *mz)
 {
     static int16_t data[3];
-    while(ak8975a_read_raw_data(data) != 0) ;
-    *mx = (data[0] - magBias[0])*magCalibration[0];
-    *my = (data[1] - magBias[1])*magCalibration[1];
-    *mz = (data[2] - magBias[2])*magCalibration[2];
-}
-
-void ak8975a_load_factory_calibration_data()
-{
-    // Get and store factory trim values
-    uint8_t rawData[3];
-    // Power down
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
-    nrf_delay_ms(1);
-    // Enter Fuse ROM access mode
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x0F);
-    nrf_delay_ms(10);
-    // Read the x-, y-, and z-axis calibration values
-    i2c_read_bytes(AK8975A_ADDRESS, AK8975A_ASAX, 3, rawData);
-    // Back to power down mode
-    i2c_write_byte(AK8975A_ADDRESS, AK8975A_CNTL, 0x00);
-
-    magCalibration[0] =  (float)(rawData[0] - 128)/256.0f + 1.0f; // Return x-axis sensitivity adjustment values
-    magCalibration[1] =  (float)(rawData[1] - 128)/256.0f + 1.0f;
-    magCalibration[2] =  (float)(rawData[2] - 128)/256.0f + 1.0f;
+    ak8975a_read_raw_data(data);
+    float x = data[0] - mag_cal.offset[0];
+    float y = data[1] - mag_cal.offset[1];
+    float z = data[2] - mag_cal.offset[2];
+    *mx = x*mag_cal.scale[0] + y*mag_cal.scale[1] + z*mag_cal.scale[2];
+    *my = x*mag_cal.scale[3] + y*mag_cal.scale[4] + z*mag_cal.scale[5];
+    *mz = x*mag_cal.scale[6] + y*mag_cal.scale[7] + z*mag_cal.scale[8];
 }
 
 
-
+// Calibration protocol
+#define NEW_VAL     ('r')
+#define CAL_VAL     ('v')
+#define WRITE_FLASH ('f')
+#define QUIT        ('q')
 
 void ak8975a_calibrate()
 {
-#if 1
+    /* Offline calibration for soft and hard iron : the user is asked (through the python
+       calibration GUI) to move the TWIMU in all directions. The python GUI interacts with use
+       through these simple commands :
+         "r" : aks for a new raw mag value.
+         "v" : sends 12 lines with each of the calibration coefficients in signed decimal ASCII form
+         "f" : asks to store the calibration data in flash
+         "q" : stops calibration routine
+    */
 
-    // Calibrate for hard iron : for some times, user is asked to move the device in
-    // all directions. We record the min / max values, then compute the halfsum which
-    // will be our offset.
-
-    int meas_count = 2000;
     static int16_t data[3];
-    static int xmin = 32767, ymin =32767, zmin = 32767;
-    static int xmax = -327678, ymax = -32768, zmax = -32768;
+#define BUF_SIZE 48
+    static char buf[BUF_SIZE] = {0};
+    float *val = NULL;
 
-    // Read a lot a values, hoping that the users moves the TWI in all possible directions
-    // Data include already the factory trim correction.
-    for(int i=0; i<meas_count; i++) {
-        if (ak8975a_read_raw_data(data) != 0) {
-            i--;
-            continue;
+    while(1) {
+        getline(BUF_SIZE, buf);
+        printf("%s\r\n", buf);
+
+        switch (buf[0]) {
+        case NEW_VAL :
+            // If new raw mag values are asked for, then send them (ending with \r\n)
+            ak8975a_read_raw_data(data);
+            printf("%d %d %d\r\n", data[0], data[1], data[2]);
+            break;
+
+        case CAL_VAL:
+            // Get 9 complete ASCII lines with the scale matrix values
+            val = &mag_cal.scale[0];
+            for(int i=0; i<9; i++) {
+                getline(BUF_SIZE, buf);
+                *val++ = atof(buf);
+            }
+            // Get 3 complete ASCII lines with the vector offset values
+            val = &mag_cal.offset[0];
+            for(int i=0; i<3; i++) {
+                getline(BUF_SIZE, buf);
+                *val++ = atof(buf);
+            }
+
+            printf("%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n%f %f %f\r\n",
+                   mag_cal.scale[0], mag_cal.scale[1], mag_cal.scale[2],
+                   mag_cal.scale[3], mag_cal.scale[4], mag_cal.scale[5],
+                   mag_cal.scale[6], mag_cal.scale[7], mag_cal.scale[8],
+                   mag_cal.offset[0], mag_cal.offset[1], mag_cal.offset[2]);
+            break;
+
+        case WRITE_FLASH :
+            // Store values in flash
+            // XXX FIXME : TODO !
+            break;
+
+        case QUIT:
+            return;
         }
-
-#if 1
-        for(int j=0; j<3; j++)
-            printf("%d ", (int)data[j]);
-        printf("\r\n");
-#endif
-
-        // Keep track of min and max along each axis
-        xmin = MIN(xmin, data[0]);
-        xmax = MAX(xmax, data[0]);
-
-        ymin = MIN(ymin, data[1]);
-        ymax = MAX(ymax, data[1]);
-
-        zmin = MIN(zmin, data[2]);
-        zmax = MAX(zmax, data[2]);
     }
-
-    printf("xmin=%d, xmax=%d, ymin=%d, ymax=%d, zmin=%d, zmax=%d\r\n", xmin, xmax, ymin, ymax, zmin, zmax);
-
-    // Now calculate biases
-    magBias[0] = (xmin + xmax)/2.;
-    magBias[1] = (ymin + ymax)/2.;
-    magBias[2] = (zmin + zmax)/2.;
-
-    // And update calibration data so that max = 180
-    magCalibration[0] = 360./(xmax - xmin);
-    magCalibration[1] = 360./(ymax - ymin);
-    magCalibration[2] = 360./(zmax - zmin);
-
-    printf("Mag calibration values :\r\n");
-    printf("\txbias = %f, ybias = %f, zbias = %f\r\n", magBias[0], magBias[1], magBias[2]);
-    printf("\txcal = %f, ycal = %f, zcal = %f\r\n", magCalibration[0], magCalibration[1], magCalibration[2]);
-
-#else
-    // Valeur de calibration sur la table de la A06 :)
-    // xbias = 7.000000, ybias = 29.500000, zbias = -142.000000
-    // xcal = 1.113281, ycal = 1.121094, zcal = 1.175781
-    magBias[0] = 7.000000;
-    magBias[1] = 29.500000;
-    magBias[2] = -142.000000;
-    magCalibration[0] = 1.113281;
-    magCalibration[1] = 1.121094;
-    magCalibration[2] = 1.175781;
-#endif
-
 }

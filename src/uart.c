@@ -81,3 +81,24 @@ bool getchar_timeout(uint32_t timeout_ms, char *c)
 }
 
 #endif
+
+
+// Read an line from serial port until \r or until size-1 bytes are read. Returns the line,
+// NULL terminated, without the \r. \n are skipped.
+void getline(int size, char* buf)
+{
+    char c;
+    while (size > 1) {
+        c = getchar();
+        if (c == '\n')
+            continue;
+        if (c == '\r') {
+            *buf = 0;
+            return;
+        }
+        *buf = c;
+        size--;
+        buf++;
+    }
+    *buf = 0;
+}

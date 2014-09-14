@@ -9,6 +9,8 @@
 #include "twi_advertising.h"
 #include "fusion.h"
 #include "i2c_wrapper.h"
+#include "app_util.h"
+#include "softdevice_handler.h"
 
 // vector to hold quaternion and AHRS results
 // XXX FIXME : need a mutex !
@@ -100,9 +102,9 @@ void imu_init(void)
 
     // Init Mag
     ak8975a_init();
-    ak8975a_load_factory_calibration_data();
 
 }
+
 
 imu_data_t * get_imu_data(imu_data_t * imu_data)
 {
@@ -120,4 +122,9 @@ imu_data_t * get_imu_data(imu_data_t * imu_data)
 
     CRITICAL_REGION_EXIT();
     return imu_data;
+}
+
+bool imu_load_calibration_data()
+{
+
 }

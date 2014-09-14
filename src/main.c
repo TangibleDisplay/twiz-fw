@@ -10,7 +10,7 @@
 #include "twi_sys_evt.h"
 #include "twi_scheduler.h"
 #include "twi_calibration_store.h"
-
+#include "ak8975a.h"
 
 /**@brief Function for application main entry.
  */
@@ -37,6 +37,8 @@ int main(void)
     advertising_start();
 
     // Try load calibration data from flash
+    //imu_load_calibration_data();
+    ak8975a_calibrate();
 
     // Enter main loop
     for (;;)

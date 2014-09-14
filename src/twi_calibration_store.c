@@ -8,7 +8,8 @@
 #include "string.h"
 #include "printf.h"
 
-#define MAGIC 0xB28AD7CE
+#define MAGIC1 0xB28AD7CE
+#define MAGIC2 0x3827BEDA
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 #define DATA_SIZE ROUND_UP((MAX(sizeof(calibration_data_t), PSTORAGE_MIN_BLOCK_SIZE)), 4)
 
@@ -50,12 +51,19 @@ uint32_t calibration_store_load(calibration_data_t *data)
                                   &flash_handle,
                                   DATA_SIZE,
                                   0));
-    if (data->magic != MAGIC) {
-        printf("Flash read : invalid magic\r\n");
+    if (data->magic1 != MAGIC1) {
+        printf("Flash calibration data read : invalid magic1. Falling back to factory values.\r\n");
+        printf("YOU SHOULD SERIOUSLY CONSIDER CALIBRATING THE IMU !!!\r\n");
         return -1;
     }
-    else
-        return 0;
+
+    if (data->magic2 != MAGIC2) {
+        printf("Flash calibration data read : invalid magic2. Falling back to factory values.\r\n");
+        printf("YOU SHOULD SERIOUSLY CONSIDER CALIBRATING THE IMU !!!\r\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 // Store calibration data in flash
@@ -67,7 +75,8 @@ uint32_t calibration_store_write(const calibration_data_t *cal_data) {
     memcpy((void*)&data, (void*)cal_data, sizeof cal_data);
 
     // Ensure magic is correct
-    data.magic = MAGIC;
+    data.magic1 = MAGIC1;
+    data.magic2 = MAGIC2;
 
     // Erase flash block
     pstorage_clear(&flash_handle, DATA_SIZE);
