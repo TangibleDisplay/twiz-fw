@@ -1,5 +1,12 @@
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "ak8975a.h"
 #include "printf.h"
+#include "i2c_wrapper.h"
+#include "nrf_delay.h"
+#include "nordic_common.h"
+#include "app_error.h"
 
 
 //Magnetometer Registers
@@ -20,6 +27,9 @@
 #define AK8975A_ASAX     0x10  // Fuse ROM x-axis sensitivity adjustment value
 #define AK8975A_ASAY     0x11  // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ     0x12  // Fuse ROM z-axis sensitivity adjustment value
+
+static float magCalibration[3] = {1., 1., 1.};
+static float magBias[3] = {0., 0., 0.};
 
 
 // Init magnetometer.
@@ -78,7 +88,7 @@ static int ak8975a_read_raw_data(int16_t *data)
     return -1;
 }
 
-static void ak8975a_read_data(float *mx, float *my, float *mz)
+void ak8975a_read_data(float *mx, float *my, float *mz)
 {
     static int16_t data[3];
     while(ak8975a_read_raw_data(data) != 0) ;
@@ -87,7 +97,7 @@ static void ak8975a_read_data(float *mx, float *my, float *mz)
     *mz = (data[2] - magBias[2])*magCalibration[2];
 }
 
-static void ak8975a_load_factory_calibration_data()
+void ak8975a_load_factory_calibration_data()
 {
     // Get and store factory trim values
     uint8_t rawData[3];

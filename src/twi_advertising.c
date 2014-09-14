@@ -6,7 +6,7 @@
 
 #include "ble_advdata.h"
 #include "nrf_gpio.h"
-#include "mpu9150.h"
+#include "imu.h"
 #include "twi_error.h"
 
 void advertising_init(void) {

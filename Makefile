@@ -5,7 +5,9 @@ C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
 C_SOURCE_FILES += twi_hw_master_sd.c
 C_SOURCE_FILES += i2c_wrapper.c
 C_SOURCE_FILES += mpu9150.c
+C_SOURCE_FILES += ak8975a.c
 C_SOURCE_FILES += fusion.c
+C_SOURCE_FILES += imu.c
 C_SOURCE_FILES += errors.c
 C_SOURCE_FILES += low_res_timer.c
 C_SOURCE_FILES += high_res_timer.c
@@ -17,6 +19,7 @@ C_SOURCE_FILES += twi_sys_evt.c
 C_SOURCE_FILES += twi_conn.c
 C_SOURCE_FILES += twi_scheduler.c
 C_SOURCE_FILES += twi_calibration_store.c
+
 
 # nRF51822 Source
 C_SOURCE_FILES += simple_uart.c

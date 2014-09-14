@@ -1,13 +1,20 @@
-#include "twi_master.h"
-#include "i2c_wrapper.h"
-#include "boards.h"
 #include <string.h>
+
+#include "i2c_wrapper.h"
+#include "twi_master.h"
+#include "boards.h"
+#include "nrf_delay.h"
 
 // HAL for invensense:
 
 int i2c_init(void)
 {
-    return !twi_master_init(); // invensense expects an error code: 0 = OK, error otherwise
+    int ret = twi_master_init();
+        // TODO: check if it can be faster
+    nrf_delay_ms(300);
+
+    // invensense expects an error code: 0 = OK, error otherwise
+    return !ret;
 }
 
 int i2c_write_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t dataLength, uint8_t const *data)

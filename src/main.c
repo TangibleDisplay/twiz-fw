@@ -1,5 +1,5 @@
 #include "uart.h"
-#include "mpu9150.h"
+#include "imu.h"
 #include "leds.h"
 #include "low_res_timer.h"
 #include "high_res_timer.h"
@@ -41,7 +41,7 @@ int main(void)
     // Enter main loop
     for (;;)
     {
-        mpu9150_update();
+        imu_update();
     }
 }
 

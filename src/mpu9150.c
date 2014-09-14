@@ -13,10 +13,7 @@
 #include "nrf_delay.h"
 #include "printf.h"
 #include "nordic_common.h"
-#include "high_res_timer.h"
 #include "app_error.h"
-#include "twi_advertising.h"
-#include "fusion.h"
 
 // Define registers per MPU6050, Register Map and Descriptions, Rev 4.2, 08/19/2013 6 DOF Motion sensor fusion device
 // Invensense Inc., www.invensense.com
@@ -138,7 +135,6 @@
 #define FIFO_R_W         0x74
 #define WHO_AM_I_MPU9150 0x75 // Should return 0x68
 
-
 // On the TWI, ADO is set to 0
 #define MPU9150_ADDRESS 0x68
 
@@ -155,34 +151,8 @@
 
 static uint8_t Ascale = AFS_2G;     // AFS_2G, AFS_4G, AFS_8G, AFS_16G
 static uint8_t Gscale = GFS_250DPS; // GFS_250DPS, GFS_500DPS, GFS_1000DPS, GFS_2000DPS
-static bool calibrated = false;
 
-// Pin definitions
-// XXX FIXME int intPin = 12;  // These can be changed, 2 and 3 are the Arduinos ext int pins
-
-static float magCalibration[3] = {0, 0, 0}, magBias[3] = {0, 0, 0};  // Factory mag calibration and mag bias
-static float gyroBias[3] = {0, 0, 0}, accelBias[3] = {0, 0, 0}; // Bias corrections for gyro and accelerometer
-static float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values
-static float temperature;
-
-// parameters for 6 DoF sensor fusion calculations
-static float PI = 3.14159265358979323846f;
-// gyroscope measurement error in rads/s (start at 60 deg/s), then reduce after ~10 s to 3
-// PI * (60.0f / 180.0f);
-
-static float pitch, yaw, roll;
-// integration interval for both filter schemes
-static float deltat = 0.0f;
-
-// vector to hold quaternion
-static float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-
-// set global variables : yaw, pitch and roll
-static inline void update_euler_from_quaternions(void);
-
-
-
-static void mpu9150_reset() {
+void mpu9150_reset() {
     // Write a one to bit 7 reset bit; toggle reset device
     i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x80);
     while(i2c_read_byte(MPU9150_ADDRESS, PWR_MGMT_1) & 0x80) ;
@@ -248,6 +218,42 @@ void mpu9150_init()
     i2c_write_byte(MPU9150_ADDRESS, INT_ENABLE, 0x01);  // Enable data ready (bit 0) interrupt
 }
 
+
+// Read accel, temps and gyro values.
+void mpu9150_read_data(int16_t * values)
+{
+    static uint8_t data[14];
+
+    // Burst read all sensors to ensure the same timestamp for everybody
+    i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
+
+    // Convert each 2 byte into signed 16bit values
+    // XXX FIXME : WARNING, accel axis seems to be inconsistent with the datasheet (all signs are reversed)
+    // Hence, the "-...." on the accel values
+    for(int i=0; i<3; i++)
+        values[i] = -(int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
+    for(int i=3; i<7; i++)
+        values[i] = (int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
+
+#if 0
+    for (int j=0; j<14; j++)
+        printf("%02x ", (uint8_t)data[j]);
+    printf("\r\n");
+#endif
+
+#if 0
+    for (int j=0; j<7; j++)
+        printf("%04x ", (int16_t) values[j]);
+    printf("\r\n");
+#endif
+}
+
+bool mpu9150_new_data()
+{
+    return i2c_read_byte(MPU9150_ADDRESS, INT_STATUS) & 0x01;
+}
+
+
 // Function which accumulates gyro and accelerometer data after device initialization. It calculates the average
 // of the at-rest readings and then loads the resulting offsets into accelerometer and gyro bias registers.
 void mpu9150_calibrate()
@@ -257,6 +263,8 @@ void mpu9150_calibrate()
     int32_t gyro_bias[3] = {0, 0, 0}, accel_bias[3] = {0, 0, 0};
     static int32_t gyro_temp[3];
     static int32_t accel_temp[3];
+    static float gyroBias[3] = {0, 0, 0}, accelBias[3] = {0, 0, 0}; // Bias corrections for gyro and accelerometer
+    static bool calibrated = false;
 
     printf("Calibrating MPU9150. Please don't move !\r\n");
 
@@ -447,143 +455,4 @@ void mpu9150_selftest()
 
     // Re-init MPU
     mpu9150_init();
-}
-
-// Read accel, temps and gyro values.
-static void mpu9150_read_data(int16_t * values)
-{
-    static uint8_t data[14];
-
-    // Burst read all sensors to ensure the same timestamp for everybody
-    i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
-
-    // Convert each 2 byte into signed 16bit values
-    // XXX FIXME : WARNING, accel axis seems to be inconsistent with the datasheet (all signs are reversed)
-    // Hence, the "-...." on the accel values
-    for(int i=0; i<3; i++)
-        values[i] = -(int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
-    for(int i=3; i<7; i++)
-        values[i] = (int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
-
-#if 0
-    for (int j=0; j<14; j++)
-        printf("%02x ", (uint8_t)data[j]);
-    printf("\r\n");
-#endif
-
-#if 0
-    for (int j=0; j<7; j++)
-        printf("%08x ", values[j]);
-    printf("\r\n");
-#endif
-}
-
-
-// XXX FIXME : this need to be split up in several functions
-// and calibration data need to be stored in flash
-void mpu9150_update()
-{
-    // Used to calculate integration interval
-    static int lastUpdate = 0, Now = 0;
-    // Used to display not so often
-    static int lastDisplay = 0;
-
-    // If intPin goes high or NEW_DATA register is set, then all data registers have new data
-    // XXX FIXME : should do this in interrupt service
-    if (i2c_read_byte(MPU9150_ADDRESS, INT_STATUS) & 0x01) {
-        static int16_t data[7];
-
-        // Read accel, temp and gyro data
-        mpu9150_read_data(data);
-
-        // Biases are removed by hardware if calibrate routine has been called
-        ax = (float)data[0];
-        ay = (float)data[1];
-        az = (float)data[2];
-
-        // Biases are removed by hardware if calibrate routine has been called.
-        // Gyro values need to be scaled. Here we are at 250dps for full scale
-        gx = (float)data[4]*250.0/32768.0*PI/180.0;
-        gy = (float)data[5]*250.0/32768.0*PI/180.0;
-        gz = (float)data[6]*250.0/32768.0*PI/180.0;
-
-        // Temperature (not used)
-        temperature = data[4];
-
-        // Get mag data
-        ak8975a_read_data(&mx, &my, &mz);
-    }
-
-    // Get integration time by time elapsed since last filter update
-    Now = get_time();
-    deltat = (float)((Now - lastUpdate)/1000000.0f) ;
-    lastUpdate = Now;
-
-    madgwick_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz, deltat, q);
-
-#if 0
-    printf("ax=%04.2f, ay=%04.2f, az=%04.2f, gx=%04.2f, gy=%04.2f, gz=%04.2f, mx=%04.2f, my=%04.2f, mz=%04.2f\r\n",
-           ax, ay, az, gx, gy, gz, mx, my, mz);
-#endif
-
-    // Display 10 times/s
-    if((Now-lastDisplay) > 20000) {
-        lastDisplay = Now;
-
-        //update_euler_from_quaternions();
-    }
-}
-
-// set global variables : yaw, pitch and roll
-static inline void update_euler_from_quaternions(void)
-{
-    // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
-    // In this coordinate system, the positive z-axis is down toward Earth.
-    // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking
-    // down on the sensor positive yaw is counterclockwise.
-    // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
-    // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
-    // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
-    // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
-    // applied in the correct order which for this configuration is yaw, pitch, and then roll.
-    // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
-    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-    pitch *= 180.0f / PI;
-    yaw   *= 180.0f / PI;
-    yaw   -= 4.11f; // Declination at Paris, 2014
-    roll  *= 180.0f / PI;
-    //printf("Yaw, Pitch, Roll: %3.2f %3.2f %3.2f\n\r", yaw, pitch, roll);
-}
-
-void imu_init(void)
-{
-    // Init I2C
-    i2c_init();
-    nrf_delay_ms(300); // TODO: check if it can be faster
-
-    // Init MPU
-    mpu9150_reset();
-    mpu9150_init();
-
-    // Init Mag
-    ak8975a_init();
-    ak8975a_load_factory_calibration_data();
-
-}
-
-imu_data_t * get_imu_data(imu_data_t * imu_data)
-{
-    imu_data->accel[0] = (int16_t) ax;    // accel x
-    imu_data->accel[1] = (int16_t) ay;    // accel y
-    imu_data->accel[2] = (int16_t) az;    // accel z
-
-    update_euler_from_quaternions();
-
-    imu_data->euler[0] = (int16_t) yaw;   // heading
-    imu_data->euler[1] = (int16_t) pitch;
-    imu_data->euler[2] = (int16_t) roll;
-
-    return imu_data;
 }

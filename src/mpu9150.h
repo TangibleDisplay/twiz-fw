@@ -2,15 +2,12 @@
 #define MPU9150_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-typedef struct imu_data_s {
-    int16_t accel[3]; // x, y, z
-    int16_t euler[3]; // yaw, pitch, roll
-} imu_data_t;
-
-void mpu9150_update(void);
-
-void imu_init(void);
-imu_data_t * get_imu_data(imu_data_t * imu_data);
+void mpu9150_reset(void);
+void mpu9150_init(void);
+void mpu9150_read_data(int16_t * values);
+void mpu9150_calibrate(void);
+bool mpu9150_new_data();
 
 #endif
