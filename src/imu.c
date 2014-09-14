@@ -62,7 +62,8 @@ void imu_update()
 #endif
 }
 
-// set global variables : yaw, pitch and roll
+// Set global variables : yaw, pitch and roll
+// Called from CRITIAL_REGION_ENTER : NO PRINTF with IRQ ALLOWED HERE ! Only simple "simple_uart" calls !
 static inline void update_euler_from_quaternions(void)
 {
     // Define output variables from updated quaternion---these are Tait-Bryan angles,
@@ -86,7 +87,6 @@ static inline void update_euler_from_quaternions(void)
     yaw   *= 180.0f / M_PI;
     yaw   -= 4.11f; // Declination at Paris, 2014
     roll  *= 180.0f / M_PI;
-    //printf("Yaw, Pitch, Roll: %3.2f %3.2f %3.2f\n\r", yaw, pitch, roll);
 }
 
 void imu_init(void)
@@ -106,6 +106,8 @@ void imu_init(void)
 
 imu_data_t * get_imu_data(imu_data_t * imu_data)
 {
+    CRITICAL_REGION_ENTER();
+
     imu_data->accel[0] = (int16_t) ax;    // accel x
     imu_data->accel[1] = (int16_t) ay;    // accel y
     imu_data->accel[2] = (int16_t) az;    // accel z
@@ -116,5 +118,6 @@ imu_data_t * get_imu_data(imu_data_t * imu_data)
     imu_data->euler[1] = (int16_t) pitch;
     imu_data->euler[2] = (int16_t) roll;
 
+    CRITICAL_REGION_EXIT();
     return imu_data;
 }
