@@ -297,8 +297,8 @@ bool mpu9150_new_data()
 void mpu9150_measure_biases()
 {
     static float data[6]; // data array to hold accelerometer and gyro x, y, z data
-    float gyro_bias[3] = {0, 0, 0};
-    float accel_bias[3] = {0, 0, 0};
+    static float gyro_bias[3] = {0, 0, 0};
+    static float accel_bias[3] = {0, 0, 0};
 
     // Reset chip to reset HW cal register to factory trim
     mpu9150_reset();
