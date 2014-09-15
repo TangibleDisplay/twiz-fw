@@ -312,6 +312,13 @@ void mpu9150_measure_biases()
     gyro_bias[1] = 0;
     gyro_bias[2] = 0;
 
+    cal.accel_bias[0] = 0;
+    cal.accel_bias[1] = 0;
+    cal.accel_bias[2] = 0;
+    cal.gyro_bias[0] = 0;
+    cal.gyro_bias[1] = 0;
+    cal.gyro_bias[2] = 0;
+
     // Configure MPU9150 gyro and accelerometer for bias calculation
     // Set gyro full-scale to 250 degrees per second, maximum sensitivity
     i2c_write_byte(MPU9150_ADDRESS, GYRO_CONFIG, 0x00);
