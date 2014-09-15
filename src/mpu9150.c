@@ -220,7 +220,7 @@ void mpu9150_init()
 }
 
 
-// Read accel, temps and gyro raw values.
+// Read accel and gyro raw values.
 static void mpu9150_read_raw_data(int16_t * values)
 {
     static uint8_t data[14];
@@ -228,23 +228,31 @@ static void mpu9150_read_raw_data(int16_t * values)
     // Burst read all sensors to ensure the same timestamp for everybody
     i2c_read_bytes(MPU9150_ADDRESS, ACCEL_XOUT_H, 14, data);
 
-    // Convert each 2 byte into signed 16bit values
-    // XXX FIXME : WARNING, accel axis seems to be inconsistent with the datasheet (all signs are reversed)
-    // Hence, the "-...." on the accel values
-    for(int i=0; i<3; i++)
-        values[i] = -(int16_t)(((int16_t)data[2*i] << 8) | data[2*i+1]) ;
-    for(int i=3; i<6; i++)
-        values[i] = (int16_t)(((int16_t)data[2*i+2] << 8) | data[2*i+3]) ;
-
 #if 0
     for (int j=0; j<14; j++)
-        printf("%02x ", (uint8_t)data[j]);
+        printf("0x%02x ", (uint8_t)data[j]);
     printf("\r\n");
 #endif
 
+    // Convert each 2 byte into signed 16bit values
+    // WARNING : code valid in little endian only !
+    uint8_t *p;
+    for(int i=0; i<3; i++) {
+        p = ((uint8_t*)&values[i])+1;
+        *p = data[2*i];
+        p = (uint8_t*)&values[i];
+        *p = data[2*i+1];
+    }
+    for(int i=3; i<6; i++) {
+        p = ((uint8_t*)&values[i])+1;
+        *p = data[2*i+2];
+        p = (uint8_t*)&values[i];
+        *p = data[2*i+3];
+    }
+
 #if 0
-    for (int j=0; j<7; j++)
-        printf("%04x ", (int16_t) values[j]);
+    for (int j=0; j<6; j++)
+        printf("0x%04x ", (int16_t) values[j]);
     printf("\r\n");
 #endif
 }
@@ -256,10 +264,20 @@ void mpu9150_read_data(float * values)
 
     // Read raw data
     mpu9150_read_raw_data(data);
+#if 0
+    printf("raw = %d %d %d %d %d %d\r\n",
+           (int)data[0], (int)data[1], (int)data[2],
+           data[3], data[4], data[5]);
+#endif
+
+    // XXX FIXME : WARNING, accel axis seems to be inconsistent with the datasheet (all signs are reversed)
+    // Hence, the "-...." on the accel values
+    for(int i=0; i<3; i++)
+        data[i] = -data[i];
 
     // Apply correction (bias and gain for gyroscope)
     for(int i=0; i<3; i++) {
-        values[i] = data[i] - cal.accel_bias[i];
+        values[i] = 1.*data[i] - cal.accel_bias[i];
         // Convert gyro in rad/s
         values[i+3] = (data[i+3] - cal.gyro_bias[i]) * 250.0 * M_PI / 180. / 32768.0;
     }
@@ -279,18 +297,20 @@ bool mpu9150_new_data()
 void mpu9150_measure_biases()
 {
     static float data[6]; // data array to hold accelerometer and gyro x, y, z data
+    float gyro_bias[3] = {0, 0, 0};
+    float accel_bias[3] = {0, 0, 0};
 
     // Reset chip to reset HW cal register to factory trim
     mpu9150_reset();
     mpu9150_init();
 
     // Reset calibration data
-    cal.accel_bias[0] = 0;
-    cal.accel_bias[1] = 0;
-    cal.accel_bias[2] = 0;
-    cal.gyro_bias[0] = 0;
-    cal.gyro_bias[1] = 0;
-    cal.gyro_bias[2] = 0;
+    accel_bias[0] = 0;
+    accel_bias[1] = 0;
+    accel_bias[2] = 0;
+    gyro_bias[0] = 0;
+    gyro_bias[1] = 0;
+    gyro_bias[2] = 0;
 
     // Configure MPU9150 gyro and accelerometer for bias calculation
     // Set gyro full-scale to 250 degrees per second, maximum sensitivity
@@ -310,27 +330,28 @@ void mpu9150_measure_biases()
 
 #if 0
         // Debug
-        for (int j=0; j<14; j=j+2)
-            printf("%02x%02x ", data[j], data[j+1]);
+        printf("measure biases : ");
+        for (int j=0; j<6; j=j+1)
+            printf("%f ", data[j]);
         printf("\r\n");
 #endif
 
         // Sum individual signed 16-bit biases to get accumulated signed 32-bit biases
-        cal.accel_bias[0] += data[0];
-        cal.accel_bias[1] += data[1];
-        cal.accel_bias[2] += data[2];
-        cal.gyro_bias[0]  += data[3];
-        cal.gyro_bias[1]  += data[4];
-        cal.gyro_bias[2]  += data[5];
+        accel_bias[0] += data[0];
+        accel_bias[1] += data[1];
+        accel_bias[2] += data[2];
+        gyro_bias[0]  += data[3];
+        gyro_bias[1]  += data[4];
+        gyro_bias[2]  += data[5];
 
     }
     // Normalize sums to get average count biases
-    cal.accel_bias[0] /= meas_count;
-    cal.accel_bias[1] /= meas_count;
-    cal.accel_bias[2] /= meas_count;
-    cal.gyro_bias[0]  /= meas_count;
-    cal.gyro_bias[1]  /= meas_count;
-    cal.gyro_bias[2]  /= meas_count;
+    cal.accel_bias[0] = accel_bias[0] / meas_count;
+    cal.accel_bias[1] = accel_bias[1] / meas_count;
+    cal.accel_bias[2] = accel_bias[2] / meas_count;
+    cal.gyro_bias[0]  = gyro_bias[0] / meas_count;
+    cal.gyro_bias[1]  = gyro_bias[1] / meas_count;
+    cal.gyro_bias[2]  = gyro_bias[2] / meas_count;
 
     // Remove gravity from the z-axis accelerometer bias calculation
     const float  accelsensitivity = 16384.;  // = 16384 LSB/g
