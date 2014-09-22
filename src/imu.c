@@ -193,6 +193,7 @@ void imu_calibrate()
             // If new raw mag values are asked for, then send them (ending with \r\n)
             ak8975a_read_raw_data(data);
             printf("%d %d %d\r\n", data[0], data[1], data[2]);
+            printf("%c: done.\r\n", buf[0]);
             break;
 
         case SEND_CAL:
@@ -215,6 +216,7 @@ void imu_calibrate()
                    cal.mag_scale[6], cal.mag_scale[7], cal.mag_scale[8]);
             printf("Mag offset = %f %f %f\r\n",
                    cal.mag_offset[0], cal.mag_offset[1], cal.mag_offset[2]);
+            printf("%c: done.\r\n", buf[0]);
             break;
 
         case START_CAL_ACC_GYRO:
@@ -230,11 +232,13 @@ void imu_calibrate()
                    cal.accel_bias[0], cal.accel_bias[1], cal.accel_bias[2]);
             printf("Gyro bias = %f %f %f\r\n",
                    cal.gyro_bias[0], cal.gyro_bias[1], cal.gyro_bias[2]);
+            printf("%c: done.\r\n", buf[0]);
             break;
 
         case WRITE_FLASH :
             // Store calibration values in flash
             imu_store_calibration_data();
+            printf("%c: done.\r\n", buf[0]);
             break;
 
         case READ_CAL_DATA :
@@ -248,6 +252,7 @@ void imu_calibrate()
                    cal.accel_bias[0], cal.accel_bias[1], cal.accel_bias[2]);
             printf("Gyro bias = %f %f %f\r\n",
                    cal.gyro_bias[0], cal.gyro_bias[1], cal.gyro_bias[2]);
+            printf("%c: done.\r\n", buf[0]);
             break;
 
         case QUIT:
@@ -266,6 +271,7 @@ void imu_calibrate()
                        acc_gyro_data[0], acc_gyro_data[1], acc_gyro_data[2],
                        acc_gyro_data[3], acc_gyro_data[4], acc_gyro_data[5],
                        mx, my, mz);
+                printf("%c: done.\r\n", buf[0]);
             }
             break;
 
