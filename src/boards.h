@@ -15,5 +15,6 @@
 #define TWI_MASTER_CONFIG_CLOCK_PIN_NUMBER  (5u)
 #define MPU9150_INT_PIN                     (6u)
 #define LED_0                               13
+#define LED_1                               12
 
 #endif
