@@ -112,20 +112,35 @@ void imu_init(void)
 
 }
 
+static inline uint16_t byte_swap(uint16_t val) {
+    // inverse endianness for radio transmission
+    return (val << 8) | (val >> 8);  // LSB <=> MSB
+}
+
+static inline uint16_t format_accel(float val) {
+    return byte_swap((uint16_t) val);
+}
+
+static inline uint16_t format_euler(float val) {
+    // normalize from 360 deg to 16 bits, keep precision and sign
+    int16_t norm = (int16_t) (val / 360.0 * 65536.0);
+
+    return byte_swap((uint16_t) norm);
+}
 
 imu_data_t * get_imu_data(imu_data_t * imu_data)
 {
     CRITICAL_REGION_ENTER();
 
-    imu_data->accel[0] = (int16_t) ax;    // accel x
-    imu_data->accel[1] = (int16_t) ay;    // accel y
-    imu_data->accel[2] = (int16_t) az;    // accel z
+    imu_data->accel[0] = format_accel(ax);
+    imu_data->accel[1] = format_accel(ay);
+    imu_data->accel[2] = format_accel(az);
 
     update_euler_from_quaternions();
 
-    imu_data->euler[0] = (int16_t) yaw;   // heading
-    imu_data->euler[1] = (int16_t) pitch;
-    imu_data->euler[2] = (int16_t) roll;
+    imu_data->euler[0] = format_euler(yaw);
+    imu_data->euler[1] = format_euler(pitch);
+    imu_data->euler[2] = format_euler(roll);
 
     CRITICAL_REGION_EXIT();
     return imu_data;
