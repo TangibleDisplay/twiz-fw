@@ -121,7 +121,7 @@ CFLAGS += -Wno-unused-local-typedefs -Wno-old-style-declaration -Wno-unused-para
 
 # Linker flags
 CONFIG_PATH += config/
-LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110.ld
+LINKER_SCRIPT = gcc_nrf51_s110_bootloadable.ld
 LDFLAGS += -Xlinker -Map=$(OUTPUT_PATH)$(OUTPUT_FILENAME).map
 LDFLAGS += -mcpu=cortex-m0 -mthumb -march=armv6-m
 LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
