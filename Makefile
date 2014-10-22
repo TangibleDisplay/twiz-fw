@@ -41,8 +41,8 @@ C_SOURCE_FILES += ble_advdata.c
 C_SOURCE_FILES += ble_conn_params.c
 
 # startup files
-C_SOURCE_FILES += system_$(DEVICESERIES).c
-ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
+C_SOURCE_FILES += system_nrf51.c
+ASSEMBLER_SOURCE_FILES += gcc_startup_nrf51.s
 
 # nRF51822 Paths
 SDK_PATH = lib/nrf51822/sdk_nrf51822_5.2.0/
@@ -62,10 +62,6 @@ HEX 	= $(OUTPUT_PATH)$(OUTPUT_FILENAME).hex
 ELF 	= $(OUTPUT_PATH)$(OUTPUT_FILENAME).elf
 BIN 	= $(OUTPUT_PATH)$(OUTPUT_FILENAME).bin
 
-
-DEVICE := NRF51
-DEVICESERIES := nrf51
-CPU := cortex-m0
 
 GDB_PORT_NUMBER := 2331
 
@@ -116,7 +112,7 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 # Compiler flags
 CFLAGS += -Os
 CFLAGS += -g3 -MD -c
-CFLAGS += -mcpu=$(CPU) -mthumb -march=armv6-m -D$(DEVICE) --std=gnu99
+CFLAGS += -mcpu=cortex-m0 -mthumb -march=armv6-m -DNRF51 --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
 CFLAGS += -Wall
@@ -127,7 +123,7 @@ CFLAGS += -Wno-unused-local-typedefs -Wno-old-style-declaration -Wno-unused-para
 CONFIG_PATH += config/
 LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110.ld
 LDFLAGS += -Xlinker -Map=$(OUTPUT_PATH)$(OUTPUT_FILENAME).map
-LDFLAGS += -mcpu=$(CPU) -mthumb -march=armv6-m
+LDFLAGS += -mcpu=cortex-m0 -mthumb -march=armv6-m
 LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += --specs=nano.specs
