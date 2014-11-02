@@ -157,8 +157,8 @@ bool imu_load_calibration_data()
     else {
         printf("No valid calibration found in flash.\r\n");
         printf("YOU SHOULD REALLY CONSIDER RUNNING THE CALIBRATION PROCEDURE !!!\r\n");
-        for(int i=0; i<200; i++)
-            leds_blink(10);
+        for(int i=0; i<100; i++)
+            led_blink(GREEN, 20); // ms
         return false;
     }
 }
@@ -236,11 +236,11 @@ void imu_calibrate()
 
         case START_CAL_ACC_GYRO:
             // Turn on LED
-            led_on();
+            led_on(GREEN);
             // Start bias measures
             mpu9150_measure_biases();
             // Turn off LED
-            led_off();
+            led_off(GREEN);
             // Send stop command
             printf("%c\r\n", END_CAL_ACC_GYRO);
             printf("Accel bias = %f %f %f\r\n",
