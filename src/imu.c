@@ -16,6 +16,7 @@
 #include "uart.h"
 #include "printf.h"
 #include "leds.h"
+#include "nrf_gpio.h"
 
 // Vector to hold quaternion and AHRS results
 // XXX FIXME : need a mutex !
@@ -110,6 +111,8 @@ void imu_init(void)
     // Init Mag
     ak8975a_init();
 
+    // Allow calibration with button:
+    nrf_gpio_cfg_input(BUTTON, NRF_GPIO_PIN_PULLDOWN);
 }
 
 static inline uint16_t byte_swap(uint16_t val) {
@@ -198,9 +201,15 @@ void imu_calibrate()
     static char buf[BUF_SIZE] = {0};
     static int16_t data[3];
     float *val = NULL;
+    bool button_was_pressed = nrf_gpio_pin_read(BUTTON);
 
     while(1) {
-        getline(BUF_SIZE, buf);
+
+        if (button_was_pressed)
+            buf[0] = START_CAL_ACC_GYRO; // emulate calibration request
+        else
+            getline(BUF_SIZE, buf);
+
         printf("%s\r\n", buf);
 
         switch (buf[0]) {
@@ -241,6 +250,13 @@ void imu_calibrate()
             mpu9150_measure_biases();
             // Turn off LED
             led_off(GREEN);
+
+            // simplifed interaction mode: assume we want to store anyway:
+            if (button_was_pressed) {
+                imu_store_calibration_data();
+                return;
+            }
+
             // Send stop command
             printf("%c\r\n", END_CAL_ACC_GYRO);
             printf("Accel bias = %f %f %f\r\n",

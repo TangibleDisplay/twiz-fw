@@ -16,5 +16,7 @@
 #define MPU9150_INT_PIN                     (6u)
 #define LED_0                               13
 #define LED_1                               12
+#define BUTTON                              29 /* connect to VCC when pressed */
+
 
 #endif
