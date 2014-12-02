@@ -1,68 +1,95 @@
-# Project Source
-C_SOURCE_FILES += hardware.c
-C_SOURCE_FILES += ble_uart.c
-C_SOURCE_FILES += ble_nus.c
-C_SOURCE_FILES += mpu.c
 C_SOURCE_FILES += main.c
+C_SOURCE_FILES += leds.c
+C_SOURCE_FILES += uart.c
+C_SOURCE_FILES += printf.c snprintf.c sprintf.c format.c
+C_SOURCE_FILES += twi_hw_master_sd.c
+C_SOURCE_FILES += i2c_wrapper.c
+C_SOURCE_FILES += mpu9150.c
+C_SOURCE_FILES += ak8975a.c
+C_SOURCE_FILES += fusion.c
+C_SOURCE_FILES += imu.c
+C_SOURCE_FILES += errors.c
+C_SOURCE_FILES += low_res_timer.c
+C_SOURCE_FILES += high_res_timer.c
+C_SOURCE_FILES += twi_ble_stack.c
+C_SOURCE_FILES += twi_ble_evt.c
+C_SOURCE_FILES += twi_advertising.c
+C_SOURCE_FILES += twi_gap.c
+C_SOURCE_FILES += twi_sys_evt.c
+C_SOURCE_FILES += twi_conn.c
+C_SOURCE_FILES += twi_scheduler.c
+C_SOURCE_FILES += twi_calibration_store.c
 
-# SDK Source
+
+# nRF51822 Source
+C_SOURCE_FILES += simple_uart.c
 C_SOURCE_FILES += nrf_delay.c
-C_SOURCE_FILES += ble_srv_common.c
+
+C_SOURCE_FILES += app_fifo.c
+C_SOURCE_FILES += app_uart_fifo.c
+C_SOURCE_FILES += app_gpiote.c
+C_SOURCE_FILES += app_button.c
+C_SOURCE_FILES += app_timer.c
+C_SOURCE_FILES += app_scheduler.c
+
+C_SOURCE_FILES += pstorage.c
+C_SOURCE_FILES += softdevice_handler.c
+
+C_SOURCE_FILES += ble_debug_assert_handler.c
+C_SOURCE_FILES += ble_error_log.c
 C_SOURCE_FILES += ble_advdata.c
 C_SOURCE_FILES += ble_conn_params.c
-C_SOURCE_FILES += softdevice_handler.c
-C_SOURCE_FILES += simple_uart.c
-C_SOURCE_FILES += app_timer.c
-C_SOURCE_FILES += twi_hw_master.c
 
 # startup files
-C_SOURCE_FILES += system_$(DEVICESERIES).c
-ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
+C_SOURCE_FILES += system_nrf51.c
+ASSEMBLER_SOURCE_FILES += gcc_startup_nrf51.s
 
+# nRF51822 Paths
 SDK_PATH = lib/nrf51822/sdk_nrf51822_5.2.0/
 SDK_SOURCE_PATH = $(SDK_PATH)Source/
 SDK_INCLUDE_PATH = $(SDK_PATH)Include/
 
-USE_LOADER := 0
-USE_S110 := 1
+LIBRARIES += -lm
+
 SOFTDEVICE := lib/nrf51822/s110_nrf51822_6.0.0/s110_nrf51822_6.0.0_softdevice.hex
 
-OBJECT_DIRECTORY := obj
-LISTING_DIRECTORY := bin
-OUTPUT_BINARY_DIRECTORY := build
-OUTPUT_FILENAME := twi
-ELF := $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
+OUTPUT_FILENAME 		= twi
 
-DEVICE := NRF51
-DEVICESERIES := nrf51
-CPU := cortex-m0
+OBJECT_DIRECTORY 		= obj/
+OUTPUT_PATH				= build/
+
+HEX 	= $(OUTPUT_PATH)$(OUTPUT_FILENAME).hex
+ELF 	= $(OUTPUT_PATH)$(OUTPUT_FILENAME).elf
+BIN 	= $(OUTPUT_PATH)$(OUTPUT_FILENAME).bin
+
 
 GDB_PORT_NUMBER := 2331
 
 # Toolchain
-GNU_INSTALL_ROOT := /usr
-GNU_VERSION := 4.8.3
-GNU_PREFIX := arm-none-eabi
-CC       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
-AS       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
-AR       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
-LD       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ld"
-NM       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-nm"
-OBJDUMP  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
-OBJCOPY  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
-GDB       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gdb"
-CGDB            := "/usr/local/bin/cgdb"
+GNU_PREFIX 		:= arm-none-eabi
+CC       		:= $(GNU_PREFIX)-gcc
+AS       		:= $(GNU_PREFIX)-as
+AR       		:= $(GNU_PREFIX)-ar -r
+LD       		:= $(GNU_PREFIX)-gcc
+NM       		:= $(GNU_PREFIX)-nm
+OBJDUMP  		:= $(GNU_PREFIX)-objdump
+OBJCOPY  		:= $(GNU_PREFIX)-objcopy
+GDB       		:= $(GNU_PREFIX)-gdb
+SIZE       		:= $(GNU_PREFIX)-size
 
-MK 				:= mkdir
+TERMINAL 		?= gnome-terminal -e
+
+MK 				:= mkdir -p
 RM 				:= rm -rf
 
 # Programmer
 JLINK = -JLinkExe
 JLINKGDBSERVER = JLinkGDBServer
 
-# Source Paths
+# nRF51822 Source Paths
 C_SOURCE_PATHS += src
 C_SOURCE_PATHS += src/startup
+C_SOURCE_PATHS += src/printf
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)nrf_delay
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)app_common
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)simple_uart
@@ -71,8 +98,9 @@ C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble
 C_SOURCE_PATHS += $(SDK_SOURCE_PATH)ble/ble_services
 ASSEMBLER_SOURCE_PATHS = src/startup
 
-# Include Paths
+# nRF51822 Include Paths
 INCLUDEPATHS += -Isrc
+INCLUDEPATHS += -Isrc/printf
 INCLUDEPATHS += -I$(SDK_PATH)Include
 INCLUDEPATHS += -I$(SDK_PATH)Include/app_common
 INCLUDEPATHS += -I$(SDK_PATH)Include/sd_common
@@ -82,23 +110,32 @@ INCLUDEPATHS += -I$(SDK_PATH)Include/ble/ble_services
 INCLUDEPATHS += -I$(SDK_PATH)Include/gcc
 
 # Compiler flags
-CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) --std=gnu99
+CFLAGS += -Os
+CFLAGS += -g3 -MD -c
+CFLAGS += -mcpu=cortex-m0 -mthumb -march=armv6-m -DNRF51 --std=gnu99
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
-#CFLAGS += -Wall# -Werror
+CFLAGS += -flto -fno-builtin # https://plus.google.com/+AndreyYurovsky/posts/XUr9VBPFDn7
+CFLAGS += -Wall
+CFLAGS += -ffunction-sections -fdata-sections
+CFLAGS += -Wno-unused-local-typedefs -Wno-old-style-declaration -Wno-unused-parameter
 
 # Linker flags
 CONFIG_PATH += config/
-LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110.ld
-LDFLAGS += -L"$(GNU_INSTALL_ROOT)/arm-none-eabi/lib/armv6-m"
-LDFLAGS += -L"$(GNU_INSTALL_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/armv6-m"
-LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
-LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs
+LINKER_SCRIPT = gcc_nrf51_s110_bootloadable.ld
+LDFLAGS += -Xlinker -Map=$(OUTPUT_PATH)$(OUTPUT_FILENAME).map
+LDFLAGS += -mcpu=cortex-m0 -mthumb -march=armv6-m
 LDFLAGS += -L$(CONFIG_PATH) -T$(LINKER_SCRIPT)
+LDFLAGS += -Wl,--gc-sections
+LDFLAGS += --specs=nano.specs
 
-FLASH_START_ADDRESS = 0x14000
+# Assembly flags
+ASFLAGS += -D__HEAP_SIZE=0
+ASFLAGS +=  -x assembler-with-cpp
+
+FLASH_START_ADDRESS = $(shell $(OBJDUMP) -h $(ELF) -j .text | grep .text | awk '{print $$4}')
 
 # Sorting removes duplicates
-BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LISTING_DIRECTORY) )
+BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_PATH) )
 
 
 ####################################################################
@@ -108,41 +145,23 @@ BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LIS
 C_SOURCE_FILENAMES = $(notdir $(C_SOURCE_FILES) )
 ASSEMBLER_SOURCE_FILENAMES = $(notdir $(ASSEMBLER_SOURCE_FILES) )
 
-C_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(C_SOURCE_FILENAMES:.c=.o) )
-ASSEMBLER_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(ASSEMBLER_SOURCE_FILENAMES:.s=.o) )
+C_OBJECTS = $(addprefix $(OBJECT_DIRECTORY), $(C_SOURCE_FILENAMES:.c=.o) )
+ASSEMBLER_OBJECTS = $(addprefix $(OBJECT_DIRECTORY), $(ASSEMBLER_SOURCE_FILENAMES:.s=.o) )
 
 # Set source lookup paths
 vpath %.c $(C_SOURCE_PATHS)
 vpath %.s $(ASSEMBLER_SOURCE_PATHS)
 
-# Include automatically previously generated dependencies
--include $(addprefix $(OBJECT_DIRECTORY)/, $(COBJS:.o=.d))
-
 ## Default build target
 .PHONY: all
-all: release
+all: $(ELF) $(HEX) $(BIN)
 
 clean:
-	$(RM) $(OUTPUT_BINARY_DIRECTORY)/*
-	$(RM) $(OBJECT_DIRECTORY)/*
-	$(RM) $(LISTING_DIRECTORY)/*
+	$(RM) $(OUTPUT_PATH)*
+	$(RM) $(OBJECT_DIRECTORY)*
 	- $(RM) JLink.log
-	- $(RM) .gdbinit
-
-## Program device
-#.PHONY: flash
-#flash: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
-#	nrfjprog --reset --program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
 
 ### Targets
-.PHONY: debug
-debug:    CFLAGS += -DDEBUG -g3 -O0
-debug:    $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
-
-.PHONY: release
-release:  CFLAGS += -DNDEBUG -Os
-release:  $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
-
 echostuff:
 	echo $(C_OBJECTS)
 	echo $(C_SOURCE_FILES)
@@ -152,82 +171,74 @@ $(BUILD_DIRECTORIES):
 	$(MK) $@
 
 ## Create objects from C source files
-$(OBJECT_DIRECTORY)/%.o: %.c
-# Build header dependencies
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -M $< -MF "$(@:.o=.d)" -MT $@
-# Do the actual compilation
+$(OBJECT_DIRECTORY)%.o: %.c | $(BUILD_DIRECTORIES)
 	$(CC) $(CFLAGS) $(INCLUDEPATHS) -c -o $@ $<
 
 ## Assemble .s files
-$(OBJECT_DIRECTORY)/%.o: %.s
-	$(CC) $(ASMFLAGS) $(INCLUDEPATHS) -c -o $@ $<
+$(OBJECT_DIRECTORY)%.o: %.s | $(BUILD_DIRECTORIES)
+	$(CC) $(ASFLAGS) $(INCLUDEPATHS) -c -o $@ $<
 
-## Link C and assembler objects to an .out file
-$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out: $(BUILD_DIRECTORIES) $(C_OBJECTS) $(ASSEMBLER_OBJECTS)
-	$(CC) $(LDFLAGS) $(C_OBJECTS) $(ASSEMBLER_OBJECTS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
+## Link C and assembler objects to an .elf file
+$(ELF): $(C_OBJECTS) $(ASSEMBLER_OBJECTS)
+	$(CC) $(LDFLAGS) $^ $(LIBRARIES) -o $@
+	$(SIZE) $@
 
-## Create binary .bin file from the .out file
-$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
-	$(OBJCOPY) -O binary $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
+## Create binary .bin file from the .elf file
+$(BIN): $(ELF)
+	$(OBJCOPY) -O binary $< $@
 
-## Create binary .hex file from the .out file
-$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
-	$(OBJCOPY) -O ihex $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
+## Create binary .hex file from the .elf file
+$(HEX): $(ELF)
+	$(OBJCOPY) -O ihex $(ELF) $@
 
+# Include automatically previously generated dependencies
+-include $(C_OBJECTS:.o=.d)
+
+#########################################################################################################
 ## Program device
-flash: flash.jlink stopdebug $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
-	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
 
-flash.jlink:
-	echo "device nrf51822\nspeed 1000\nr\nloadbin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin, $(FLASH_START_ADDRESS)\nr\ng\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
+SOFTDEVICE_ELF = ${OUTPUT_PATH}${shell basename ${SOFTDEVICE:.hex=.elf}}
 
-flash-softdevice: erase-all flash-softdevice.jlink stopdebug
-ifndef SOFTDEVICE
-	$(error "You need to set the SOFTDEVICE command-line parameter to a path (without spaces) to the softdevice hex-file")
-endif
+${SOFTDEVICE_ELF}: ${SOFTDEVICE}
+	mkdir -p ${shell dirname ${SOFTDEVICE_ELF}}
+	${OBJCOPY} -Iihex -Oelf32-littlearm ${SOFTDEVICE} ${SOFTDEVICE_ELF}
 
-	# Convert from hex to binary. Split original hex in two to avoid huge (>250 MB) binary file with just 0s.
-	$(OBJCOPY) -Iihex -Obinary --remove-section .sec3 $(SOFTDEVICE) $(OUTPUT_BINARY_DIRECTORY)/_mainpart.bin
-	$(OBJCOPY) -Iihex -Obinary --remove-section .sec1 --remove-section .sec2 $(SOFTDEVICE) $(OUTPUT_BINARY_DIRECTORY)/_uicr.bin
+flash-all: ${SOFTDEVICE_ELF} ${ELF} startgdbserver
+	${GDB} -ex "source scripts/flash.gdb" -ex "flash-all ${SOFTDEVICE_ELF} ${ELF}" -ex "set confirm off" -ex "quit"
 
-	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/flash-softdevice.jlink
+flash: ${ELF} startgdbserver
+	$(GDB) -ex "source scripts/flash.gdb" -ex "flash ${ELF}" -ex "set confirm off" -ex "quit"
 
-flash-softdevice.jlink:
-	# Do magic. Write to NVMC to enable erase, do erase all and erase UICR, reset, enable writing, load mainpart bin, load uicr bin. Reset.
-	# Resetting in between is needed to disable the protections.
-	echo "w4 4001e504 1\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/_mainpart.bin\" 0\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/_uicr.bin\" 0x10001000\nr\ng\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/flash-softdevice.jlink
-	#echo "w4 4001e504 1\nloadbin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\" 0\nr\ng\nexit\n" > flash-softdevice.jlink
+erase-all: startgdbserver
+	$(GDB) -ex "source scripts/flash.gdb" -ex "erase-all" -ex "set confirm off" -ex "quit"
+
+#########################################################################################################
+# Resurrect device - TODO: switch to gdb script too
 
 recover: recover.jlink erase-all.jlink pin-reset.jlink
-	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/recover.jlink
-	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/erase-all.jlink
-	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/pin-reset.jlink
+	$(JLINK) $(OUTPUT_PATH)recover.jlink
+	$(MAKE) erase-all
+	$(JLINK) $(OUTPUT_PATH)pin-reset.jlink
 
 recover.jlink:
-	echo "si 0\nt0\nsleep 1\ntck1\nsleep 1\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\ntck0\nsleep 100\nsi 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/recover.jlink
+	printf "si 0\nt0\nsleep 1\ntck1\nsleep 1\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\nt0\nsleep 2\nt1\nsleep 2\ntck0\nsleep 100\nsi 1\nr\nexit\n" > $(OUTPUT_PATH)recover.jlink
 
 pin-reset.jlink:
-	echo "device nrf51822\nw4 4001e504 2\nw4 40000544 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/pin-reset.jlink
+	printf "device nrf51822\nw4 4001e504 2\nw4 40000544 1\nr\nexit\n" > $(OUTPUT_PATH)pin-reset.jlink
 
-erase-all: erase-all.jlink
-	$(JLINK) $(OUTPUT_BINARY_DIRECTORY)/erase-all.jlink
+#########################################################################################################
+# Debug device
 
-erase-all.jlink:
-	echo "device nrf51822\nw4 4001e504 2\nw4 4001e50c 1\nw4 4001e514 1\nr\nexit\n" > $(OUTPUT_BINARY_DIRECTORY)/erase-all.jlink
+startgdbserver_here:
+	@pidof JLinkGDBServer > /dev/null || $(JLINKGDBSERVER) -if swd -speed 1000 -port $(GDB_PORT_NUMBER)
 
-startdebug: stopdebug debug.jlink .gdbinit
-	$(JLINKGDBSERVER) -single -if swd -speed 1000 -port $(GDB_PORT_NUMBER) &
-	sleep 1
+startgdbserver:
+	@pidof JLinkGDBServer > /dev/null || { $(TERMINAL) "$(JLINKGDBSERVER) -if swd -speed 1000 -port $(GDB_PORT_NUMBER)" & sleep 1 ; }
+
+debug: $(ELF) startgdbserver
 	$(GDB) $(ELF)
 
-stopdebug:
-	-killall $(JLINKGDBSERVER)
+stopgdbserver:
+	@pidof JLinkGDBServer > /dev/null && killall $(JLINKGDBSERVER) || true
 
-.gdbinit:
-	echo "target remote localhost:$(GDB_PORT_NUMBER)\nmonitor flash download = 1\nmonitor flash device = nrf51822\nbreak main\nmon reset\n" > .gdbinit
-
-debug.jlink:
-	echo "Device nrf51822" > $(OUTPUT_BINARY_DIRECTORY)/debug.jlink
-
-.PHONY: flash flash-softdevice erase-all startdebug stopdebug
-
+.PHONY: flash flash-softdevice erase-all startgdbserver stopgdbserver debug

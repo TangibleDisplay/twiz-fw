@@ -1,58 +1,64 @@
-#include <stdbool.h>
-#include "app_error.h"
-#include "hardware.h"
-#include "ble_uart.h"
-#include "mpu.h"
-#include "nrf_gpio.h"
-#include "nrf_delay.h"
+#include "uart.h"
+#include "imu.h"
+#include "leds.h"
+#include "low_res_timer.h"
+#include "high_res_timer.h"
+#include "twi_gap.h"
+#include "twi_conn.h"
+#include "twi_advertising.h"
+#include "twi_ble_stack.h"
+#include "twi_sys_evt.h"
+#include "twi_scheduler.h"
+#include "twi_calibration_store.h"
+#include "ak8975a.h"
 
-/**
- * @brief Function for application main entry.
+/**@brief Function for application main entry.
  */
 int main(void)
 {
     // Initialize
     leds_init();
-    timers_init();
     ble_stack_init();
-    gap_params_init();
-    services_init();
+    low_res_timer_init();
+    high_res_timer_init();
+    uart_init();
+    imu_init();
+    APP_ERROR_CHECK(pstorage_init());
+    calibration_store_init();
+
+    // Setup BLE stack
     advertising_init();
     conn_params_init();
     sec_params_init();
+    gap_params_init();
 
+    // Start execution
+    low_res_timer_start();
     advertising_start();
 
-    bool flag0 = true;
-    bool err;
+    // Try load calibration data from flash
+    imu_load_calibration_data();
 
-    uint32_t timestamp_ms;
+    // Wait for 2 seconds for a 'c' on the serial port.
+    // If we get a 'c', then start calibration procedure
+    printf("Press c within 2 seconds to start calibration procedure\r\n");
+    static char c;
+    for (int i=0; i<2000; i++) {
+        if (getchar_timeout(1, &c))
+            if(c=='c') {
+                printf("Starting calibration procedure\r\n");
+                printf("Please close minicom and start python calibration GUI\r\n");
+                imu_calibrate();
+            }
+    }
 
-    while(true)
+    // Enter main loop
+    for (;;)
     {
-        if (bleUartConnected()) {
-            power_manage();
-            if (flag0) {
-                nrf_delay_ms(30); // TODO find why useful
-                print("Connected\n");
-
-                nrf_delay_ms(30); // TODO find why useful
-                err = mpuInit();
-                APP_ERROR_CHECK_BOOL(err);
-                print("IMU init OK\n");
-
-                nrf_gpio_pin_set(LED_0);
-                flag0 = false;
-            }
-        } else {
-            flag0 = true;
-
-            if (ms_passed_since(timestamp_ms) >= 100) {
-                nrf_gpio_pin_toggle(LED_0);
-                get_ms(&timestamp_ms); // save last blink date
-            }
-        }
+        imu_update();
     }
 }
 
-
+/**
+ * @}
+ */

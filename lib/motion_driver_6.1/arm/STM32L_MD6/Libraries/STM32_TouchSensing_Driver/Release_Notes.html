@@ -1,0 +1,569 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:st1="urn:schemas-microsoft-com:office:smarttags" xmlns="http://www.w3.org/TR/REC-html40"><head>
+
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"><link rel="File-List" href="Release_Notes_files/filelist.xml"><link rel="Edit-Time-Data" href="Release_Notes_files/editdata.mso"><title>Release Notes for STM32 Touch Sensing Driver</title><style>
+<!--
+/* Font Definitions */
+@font-face
+{font-family:Wingdings;
+panose-1:5 0 0 0 0 0 0 0 0 0;
+mso-font-charset:2;
+mso-generic-font-family:auto;
+mso-font-pitch:variable;
+mso-font-signature:0 268435456 0 0 -2147483648 0;}
+@font-face
+{font-family:"MS Mincho";
+panose-1:2 2 6 9 4 2 5 8 3 4;
+mso-font-alt:"Arial Unicode MS";
+mso-font-charset:128;
+mso-generic-font-family:roman;
+mso-font-format:other;
+mso-font-pitch:fixed;
+mso-font-signature:1 134676480 16 0 131072 0;}
+@font-face
+{font-family:Verdana;
+panose-1:2 11 6 4 3 5 4 4 2 4;
+mso-font-charset:0;
+mso-generic-font-family:swiss;
+mso-font-pitch:variable;
+mso-font-signature:536871559 0 0 0 415 0;}
+@font-face
+{font-family:"\@MS Mincho";
+panose-1:0 0 0 0 0 0 0 0 0 0;
+mso-font-charset:128;
+mso-generic-font-family:roman;
+mso-font-format:other;
+mso-font-pitch:fixed;
+mso-font-signature:1 134676480 16 0 131072 0;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+{mso-style-parent:"";
+margin:0cm;
+margin-bottom:.0001pt;
+mso-pagination:widow-orphan;
+font-size:12.0pt;
+font-family:"Times New Roman";
+mso-fareast-font-family:"Times New Roman";}
+h1
+{mso-margin-top-alt:auto;
+margin-right:0cm;
+mso-margin-bottom-alt:auto;
+margin-left:0cm;
+mso-pagination:widow-orphan;
+mso-outline-level:1;
+font-size:24.0pt;
+font-family:"Times New Roman";
+mso-fareast-font-family:"MS Mincho";
+font-weight:bold;}
+h2
+{mso-style-next:Normal;
+margin-top:12.0pt;
+margin-right:0cm;
+margin-bottom:3.0pt;
+margin-left:0cm;
+mso-pagination:widow-orphan;
+page-break-after:avoid;
+mso-outline-level:2;
+font-size:14.0pt;
+font-family:Arial;
+mso-fareast-font-family:"MS Mincho";
+font-weight:bold;
+font-style:italic;}
+h3
+{mso-margin-top-alt:auto;
+margin-right:0cm;
+mso-margin-bottom-alt:auto;
+margin-left:0cm;
+mso-pagination:widow-orphan;
+mso-outline-level:3;
+font-size:13.5pt;
+font-family:"Times New Roman";
+mso-fareast-font-family:"MS Mincho";
+font-weight:bold;}
+a:link, span.MsoHyperlink
+{color:blue;
+text-decoration:underline;
+text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+{color:blue;
+text-decoration:underline;
+text-underline:single;}
+p
+{mso-margin-top-alt:auto;
+margin-right:0cm;
+mso-margin-bottom-alt:auto;
+margin-left:0cm;
+mso-pagination:widow-orphan;
+font-size:12.0pt;
+font-family:"Times New Roman";
+mso-fareast-font-family:"Times New Roman";}
+@page Section1
+{size:612.0pt 792.0pt;
+margin:72.0pt 90.0pt 72.0pt 90.0pt;
+mso-header-margin:36.0pt;
+mso-footer-margin:36.0pt;
+mso-paper-source:0;}
+div.Section1
+{page:Section1;}
+/* List Definitions */
+@list l0
+{mso-list-id:734668187;
+mso-list-template-ids:423004246;}
+@list l1
+{mso-list-id:1315182333;
+mso-list-template-ids:555131286;}
+@list l1:level1
+{mso-level-tab-stop:36.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level2
+{mso-level-tab-stop:72.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level3
+{mso-level-tab-stop:108.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level4
+{mso-level-tab-stop:144.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level5
+{mso-level-tab-stop:180.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level6
+{mso-level-tab-stop:216.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level7
+{mso-level-tab-stop:252.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level8
+{mso-level-tab-stop:288.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l1:level9
+{mso-level-tab-stop:324.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l2
+{mso-list-id:1823504553;
+mso-list-template-ids:1589676166;}
+@list l2:level1
+{mso-level-number-format:bullet;
+mso-level-text:\F0A7;
+mso-level-tab-stop:36.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;
+mso-ansi-font-size:10.0pt;
+font-family:Wingdings;}
+@list l2:level2
+{mso-level-number-format:bullet;
+mso-level-text:\F0B7;
+mso-level-tab-stop:72.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;
+mso-ansi-font-size:10.0pt;
+font-family:Symbol;}
+@list l3
+{mso-list-id:2024673066;
+mso-list-template-ids:154433278;}
+@list l3:level1
+{mso-level-number-format:bullet;
+mso-level-text:\F0A7;
+mso-level-tab-stop:36.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;
+mso-ansi-font-size:10.0pt;
+font-family:Wingdings;}
+@list l3:level2
+{mso-level-number-format:bullet;
+mso-level-text:\F0B7;
+mso-level-tab-stop:72.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;
+mso-ansi-font-size:10.0pt;
+font-family:Symbol;}
+@list l3:level3
+{mso-level-number-format:bullet;
+mso-level-text:\F0B0;
+mso-level-tab-stop:108.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;
+font-family:Symbol;}
+@list l3:level4
+{mso-level-tab-stop:144.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l3:level5
+{mso-level-tab-stop:180.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l3:level6
+{mso-level-tab-stop:216.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l3:level7
+{mso-level-tab-stop:252.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l3:level8
+{mso-level-tab-stop:288.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l3:level9
+{mso-level-tab-stop:324.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;}
+@list l4
+{mso-list-id:2030327290;
+mso-list-template-ids:1591520944;}
+@list l4:level1
+{mso-level-number-format:bullet;
+mso-level-text:\F0A7;
+mso-level-tab-stop:36.0pt;
+mso-level-number-position:left;
+text-indent:-18.0pt;
+mso-ansi-font-size:10.0pt;
+font-family:Wingdings;}
+ol
+{margin-bottom:0cm;}
+ul
+{margin-bottom:0cm;}
+-->
+</style><style type="disc">
+</style><!--[if !mso]> <style> v\:* {behavior:url(#default#VML);} o\:* {behavior:url(#default#VML);} w\:* {behavior:url(#default#VML);} .shape {behavior:url(#default#VML);} </style> <![endif]-->
+
+
+
+
+
+<o:smarttagtype namespaceuri="urn:schemas-microsoft-com:office:smarttags" name="place"></o:smarttagtype><o:smarttagtype namespaceuri="urn:schemas-microsoft-com:office:smarttags" name="country-region"></o:smarttagtype><!--[if gte mso 9]><xml> <o:DocumentProperties> <o:Author>STMicroelectronics</o:Author> <o:LastAuthor>Bruno COPIATTI</o:LastAuthor> <o:Revision>116</o:Revision> <o:TotalTime>397</o:TotalTime> <o:Created>2009-02-27T19:26:00Z</o:Created> <o:LastSaved>2010-11-30T09:50:00Z</o:LastSaved> <o:Pages>1</o:Pages> <o:Words>1796</o:Words> <o:Characters>10241</o:Characters> <o:Company>STMicroelectronics</o:Company> <o:Lines>85</o:Lines> <o:Paragraphs>24</o:Paragraphs> <o:CharactersWithSpaces>12013</o:CharactersWithSpaces> <o:Version>11.9999</o:Version> </o:DocumentProperties> </xml><![endif]--><!--[if gte mso 9]><xml> <w:WordDocument> <w:Zoom>110</w:Zoom> <w:ValidateAgainstSchemas/> <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid> <w:IgnoreMixedContent>false</w:IgnoreMixedContent> <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText> <w:Compatibility> <w:UseFELayout/> </w:Compatibility> <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel> </w:WordDocument> </xml><![endif]--><!--[if gte mso 9]><xml> <w:LatentStyles DefLockedState="false" LatentStyleCount="156"> </w:LatentStyles> </xml><![endif]--><!--[if !mso]><object classid="clsid:38481807-CA0E-42D2-BF39-B33AF135CC4D" id=ieooui></object> <style> st1\:*{behavior:url(#ieooui) } </style> <![endif]--><!--[if gte mso 10]> <style> /* Style Definitions */ table.MsoNormalTable {mso-style-name:"Table Normal"; mso-tstyle-rowband-size:0; mso-tstyle-colband-size:0; mso-style-noshow:yes; mso-style-parent:""; mso-padding-alt:0cm 5.4pt 0cm 5.4pt; mso-para-margin:0cm; mso-para-margin-bottom:.0001pt; mso-pagination:widow-orphan; font-size:10.0pt; font-family:"Times New Roman"; mso-fareast-font-family:"Times New Roman"; mso-ansi-language:#0400; mso-fareast-language:#0400; mso-bidi-language:#0400;} </style> <![endif]--><!--[if gte mso 9]><xml> <o:shapedefaults v:ext="edit" spidmax="34818"/> </xml><![endif]--><!--[if gte mso 9]><xml> <o:shapelayout v:ext="edit"> <o:idmap v:ext="edit" data="1"/> </o:shapelayout></xml><![endif]--></head><body style="" lang="EN-US" link="blue" vlink="blue">
+<div class="Section1">
+<p class="MsoNormal"><span style="font-family: Arial;"><o:p></o:p></span></p>
+<div align="center">
+<table class="MsoNormalTable" style="width: 675pt;" border="0" cellpadding="0" cellspacing="0" width="900">
+<tbody>
+<tr>
+<td style="padding: 0cm;" valign="top">
+<table class="MsoNormalTable" style="width: 675pt;" border="0" cellpadding="0" cellspacing="0" width="900">
+<tbody>
+<tr style="">
+<td style="padding: 1.5pt;">
+<h1 style="margin-bottom: 18pt; text-align: center;" align="center"><span style="font-size: 20pt; font-family: Verdana; color: rgb(51, 102, 255);">Release
+Notes for<o:p></o:p></span></h1>
+<h1 style="margin-bottom: 18pt; text-align: center;" align="center"><span style="font-size: 20pt; font-family: Verdana; color: rgb(51, 102, 255);">STM32 Touch-Sensing Driver</span><span style="font-size: 20pt; font-family: Verdana;"><o:p></o:p></span></h1>
+<p class="MsoNormal" style="text-align: center;" align="center"><span style="font-size: 10pt; font-family: Arial; color: black;">Copyright
+© 2011 STMicroelectronics</span><span style="color: black;"><u1:p></u1:p><o:p></o:p></span></p>
+<p class="MsoNormal" style="text-align: center;" align="center"><span style="font-size: 10pt;"><img id="_x0000_i1025" src="../../_htmresc/logo.bmp" border="0" height="65" width="86"></span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="MsoNormal"><span style="font-family: Arial; display: none;"><o:p>&nbsp;</o:p></span></p>
+<table class="MsoNormalTable" style="width: 675pt;" border="0" cellpadding="0" width="900">
+<tbody>
+<tr style="">
+<td style="padding: 0cm;" valign="top">
+<h2 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;"><span style="font-size: 12pt; color: white;">Contents<o:p></o:p></span></h2>
+<ol style="margin-top: 0cm;" start="1" type="1">
+<li class="MsoNormal" style="color: black; margin-top: 4.5pt; margin-bottom: 4.5pt;"><span style="font-size: 10pt; font-family: Verdana;"><a href="#History">Update
+History</a><o:p></o:p></span></li>
+<li class="MsoNormal" style="color: black; margin-top: 4.5pt; margin-bottom: 4.5pt;"><span style="font-size: 10pt; font-family: Verdana;"><a href="#License">License</a><o:p></o:p></span></li>
+</ol>
+<h2 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;"><a name="History"></a><span style="font-size: 12pt; color: white;">Update History<o:p></o:p></span></h2>
+<p class="MsoNormal"><br>
+<span style="color: black;"><o:p></o:p></span></p>
+            <h3 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial; margin-right: 558.05pt;"><span style="font-size: 10pt; font-family: Arial; color: white;">V0.1.3 / 23-September-2011<o:p></o:p></span></h3>
+
+
+            <class style=""></class>
+            
+            <p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt;"><b style=""><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Main
+changes<o:p></o:p></span></u></b><span style="font-size: 10pt; font-family: Verdana;"></span></p>
+
+
+            
+            <ul style="list-style-type: square;">
+<li><span style="font-size: 10pt; font-family: Verdana;">Add directive for GNU C compiler in stm32l15x_tsl_acquisition.c file</span></li><li><span style="font-size: 10pt; font-family: Verdana;">Update STM32L15x channel table of MCU resources section of the user manual (.chm)<br>
+</span></li>
+            </ul>
+
+            <br>
+
+            
+            <p style="margin-left: 24px; width: 901px;"><span class="Apple-style-span" style="border-collapse: separate; color: rgb(0, 0, 0); font-family: 'Times New Roman'; font-style: normal; font-variant: normal; font-weight: normal; letter-spacing: normal; line-height: normal; orphans: 2; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; font-size: medium;"><span class="Apple-style-span" style=""><b><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Toolchains
+and Compilers used during validation</span></u></b></span></span></p>
+
+            
+            <ul style="list-style-type: square;">
+<li><span style="font-size: 10pt; font-family: Verdana;">KEIL µVision version 4.03, compiler version &nbsp;4.0.0.728</span><span style="font-size: 10pt; font-family: Verdana;"></span></li><li><span style="font-size: 10pt; font-family: Verdana;">IAR EWARM version 6.21.1, compiler version 6.21.1.52794</span></li>
+            </ul>
+
+            
+            <h3 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial; margin-right: 558.05pt;"><span style="font-size: 10pt; font-family: Arial; color: white;">V0.1.2 / 02-September-2011<o:p></o:p></span></h3>
+
+            <class style=""></class>
+            <p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt;"><b style=""><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Main
+changes<o:p></o:p></span></u></b><span style="font-size: 10pt; font-family: Verdana;"></span></p>
+
+            <ul style="list-style-type: square;">
+<li><span style="font-size: 10pt; font-family: Verdana;">Bug correction in stm32l15x_tsl_services.c file (ECSTimeStepCounter variable was decremented below its minimum value (0)).</span></li>
+              <li><span style="font-size: 10pt; font-family: Verdana;">Bug correction in stm32l15x_tsl_singlechannelkey.c file (Channel_P3.EnabledChannels was badly affected).</span></li>
+              <li><span style="font-size: 10pt; font-family: Verdana;">Bug correction in stm32l15x_tsl_checkconfig.h file (shield masks for PB4 was wrong).</span><span class="Apple-style-span" style="border-collapse: separate; color: rgb(0, 0, 0); font-family: 'Times New Roman'; font-style: normal; font-variant: normal; font-weight: normal; letter-spacing: normal; line-height: normal; orphans: 2; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; font-size: medium;"><span class="Apple-style-span" style=""><b><u><span style="font-size: 10pt; font-family: Verdana; color: black;"></span></u></b></span></span></li>
+            </ul>
+            <br>
+            <p style="margin-left: 24px; width: 901px;"><span class="Apple-style-span" style="border-collapse: separate; color: rgb(0, 0, 0); font-family: 'Times New Roman'; font-style: normal; font-variant: normal; font-weight: normal; letter-spacing: normal; line-height: normal; orphans: 2; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; font-size: medium;"><span class="Apple-style-span" style=""><b><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Toolchains
+and Compilers used during validation</span></u></b></span></span></p>
+            <ul style="list-style-type: square;">
+<li><span style="font-size: 10pt; font-family: Verdana;">KEIL µVision version 4.03, compiler version &nbsp;4.0.0.728</span><span style="font-size: 10pt; font-family: Verdana;"></span></li><li><span style="font-size: 10pt; font-family: Verdana;">IAR EWARM version 6.21.1, compiler version 6.21.1.52794</span></li>
+            </ul>
+            <br>
+            <span class="Apple-style-span" style="border-collapse: separate; color: rgb(0, 0, 0); font-family: 'Times New Roman'; font-style: normal; font-variant: normal; font-weight: normal; letter-spacing: normal; line-height: normal; orphans: 2; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; font-size: medium;"><span class="Apple-style-span" style=""><b><u><span style="font-size: 10pt; font-family: Verdana; color: black;"></span></u></b></span></span><p class="MsoNormal"><span style="color: black;"><o:p></o:p></span></p><h3 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial; margin-right: 558.05pt;"><span style="font-size: 10pt; font-family: Arial; color: white;">V0.1.1 / 20-April-2011<o:p></o:p></span></h3>
+<class style=""></class>
+<p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt;"><b style=""><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Main
+changes<o:p></o:p></span></u></b><span style="font-size: 10pt; font-family: Verdana;"></span></p>
+<ul style="list-style-type: square;"><li><span style="font-size: 10pt; font-family: Verdana;">Bug correction in stm32l15x_tsl_ct_acquisition.c file (RI-&gt;HYSCR1 badly configured).</span></li></ul><p class="MsoNormal">&nbsp; &nbsp; </p><h3 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial; margin-right: 558.05pt;"><span style="font-size: 10pt; font-family: Arial; color: white;">V0.1.0 / 08-April-2011<o:p></o:p></span></h3>
+<class style=""></class>
+<p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt;"><b style=""><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Main
+changes<o:p></o:p></span></u></b><span style="font-size: 10pt; font-family: Verdana;"></span></p>
+<ul style="list-style-type: square;"><li><span style="font-size: 10pt; font-family: Verdana;">First Beta
+release.</span></li>
+              <li class="MsoNormal" style=""><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">Bugs correction and enhancements:</span><span style="font-size: 10pt;"><o:p></o:p></span></li>
+              </ul><ul style="list-style-type: circle; margin-left: 60px;"><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;"></span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">correct&nbsp;the GPIO clock setting&nbsp;</span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">in TSL_IO_Init().</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;"> add missing&nbsp;</span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">enable/disable interrupt&nbsp;</span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">in TSL_IO_Acquisition_P1/2/3().</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">add support of the shield with
+      one pin.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">remove&nbsp;TSL_RefKey_Process() and TSL_SCKey_SetAcquisitionMasks() functions (not used).</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">replace uint8_t and uint32_t by unsigned in bit fields structures.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">remove the RTOS feature (not used).</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">remove DriveMask and RejectedNb elements of TOUCH_PORT_Info_T structure (not used).</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">remove unused constants related to RC acquisition.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">add wait delay during acquisition (CLWHTA and CLWLTA constants).</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">support of the PROTECT_IO_ACCESS feature.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">remove IT_SYNC feature (not used) in the configuration file.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">change the device name supported in the configuration file.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">remove MCKEYx_LAYOUT_TYPE </span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">in the configuration file.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">rename PIN_SHIELD by ACTIVE_SHIELD_CHANNEL </span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">in the configuration file.</span></li><li><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;">code clean-up.</span></li></ul>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<br><p style="margin-left: 24px; width: 901px;"><span class="Apple-style-span" style="border-collapse: separate; color: rgb(0, 0, 0); font-family: 'Times New Roman'; font-style: normal; font-variant: normal; font-weight: normal; letter-spacing: normal; line-height: normal; orphans: 2; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; font-size: medium;"><span class="Apple-style-span" style=""><b><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Toolchains
+and Compilers used during validation</span></u></b></span></span></p><ul style="list-style-type: square;"><li><span style="font-size: 10pt; font-family: Verdana;">KEIL µVision version 4.03, compiler version &nbsp;4.0.0.728</span><span style="font-size: 10pt; font-family: Verdana;"></span></li><li><span style="font-size: 10pt; font-family: Verdana;">IAR EWARM version 6.10.5, compiler version 6.10.2.52244</span></li></ul>&nbsp; &nbsp; &nbsp; <ul style="list-style-type: square;"><ul style="margin-top: 0cm;" type="square">
+
+                </ul>
+              
+</ul><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;"></span><span style="font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;"></span><span style="font-size: 10pt; font-family: &quot;Verdana&quot;,&quot;sans-serif&quot;;"></span>
+
+<p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt;"><b style=""><u><span style="font-size: 10pt; font-family: Verdana; color: black;">Known limitations<o:p></o:p></span></u></b><span style="font-size: 10pt; font-family: Verdana;"></span></p>
+<ul style="list-style-type: square;"><li><span style="font-size: 10pt; font-family: Verdana;">If
+the DxS feature is enabled, the Debounce Filter must be &gt;= 1 (i.e.
+if at least 2 channels have their&nbsp;DxSGroup parameter different
+from 0).<br></span></li><li><span style="font-size: 10pt; font-family: Verdana;">The Recalibration timeout is 1s accurate (i.e. for 2s specified, the RecalTimeout will be between 1s and 2s).</span></li><li><span style="font-size: 10pt; font-family: Verdana;">Inlining
+functions are not yet supported by IAR compiler when referencing global
+variables. USE_INLINED_FUNCTIONS has also no effect when IAR compiler
+is used.</span></li><li><span style="font-size: 10pt; font-family: Verdana;">The 3 electrodes of a MCKey must have the same channel number.</span></li><li><span style="font-size: 10pt; font-family: Verdana;">Only the interlaced electrodes layout is supported for MCKeys.</span></li><li><span style="font-size: 10pt; font-family: Verdana;">The GROUP6 (PB4 and PB5) is not usable due to a poor sensitivity.<br></span></li></ul><p class="MsoNormal">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </p><span style="font-family: &quot;Times New Roman&quot;;"> &nbsp; &nbsp; &nbsp;</span>
+<p class="MsoNormal">&nbsp;<o:p></o:p></p>
+<h2 style="background: rgb(51, 102, 255) none repeat scroll 0% 50%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;"><a name="License"></a><span style="font-size: 12pt; color: white;">License<o:p></o:p></span></h2>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">By
+using this Licensed Software, You are agreeing to be bound by the terms
+and conditions of this License Agreement. Do not use the Licensed
+Software until You have read and agreed to the following terms and
+conditions. The use of the Licensed Software implies automatically the
+acceptance of the following terms and conditions.<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">DEFINITIONS<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><i><span style="font-size: 10pt; font-family: Verdana; color: red;">Licensed
+Software</span></i><span style="font-size: 10pt; font-family: Verdana; color: red;">:
+means the enclosed STM32 TOUCH-SENSING LIBRARY (drivers, example
+firmwares and project templates) and all the related documentations and
+design tools licensed in the form of object and/or source code as the
+case maybe.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><i><span style="font-size: 10pt; font-family: Verdana; color: red;">Product</span></i><span style="font-size: 10pt; font-family: Verdana; color: red;">:
+means a product or a system that includes or incorporates solely and
+exclusively an executable version of the Licensed Software and provided
+further that such Licensed Software executes solely and exclusively on
+STM32 microcontroller devices manufactured by or for ST.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">LICENSE<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">STMicroelectronics
+(&#8220;ST&#8221;) grants You a non-exclusive, worldwide, non-transferable (whether
+by assignment or otherwise) non sub-licensable (except as expressly
+provided hereunder), revocable, royalty-free limited license to: <o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">(i)
+make copies, prepare derivatives works, of the source code version of
+the Licensed Software for the sole and exclusive purpose of developing
+executable versions of such Licensed Software only for use with the
+Product;<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">(ii)
+make copies, prepare derivatives works of the object code versions of
+the Licensed Software for the sole purpose of designing, developing and
+manufacturing the Products;<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">(iii)
+make, use, sell, offer to sell, import or otherwise distribute
+Products. <o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">You
+have the right to grant sub-licenses of the rights set forth in this
+section in order to execute all of the rights set forth herein,
+provided that you will impose to the sub-licensee the same terms and
+conditions set forth in this Agreement and that you will remain fully
+liable to indemnify ST against all and any loss, liability, costs,
+damages, expenses (including the fees of lawyers and other
+professionals), suffered, incurred or sustained as a result of or in
+relation to the breach of the terms of this Agreement.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">OWNERSHIP
+AND COPYRIGHT<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">Title
+to the Licensed Software, related documentation and all copies thereof
+remain with ST and/or its licensors. You may not remove the copyrights
+notices from the Licensed Software and to any copies of the Licensed
+Software. You agree to prevent any unauthorized copying of the Licensed
+Software and related documentation.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">RESTRICTIONS<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">Unless
+otherwise explicitly stated in this Agreement, You may not sell,
+assign, sublicense, lease, rent or otherwise distribute the Licensed
+for commercial purposes, in whole or in part.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">You
+acknowledge and agree that any use, adaptation translation or
+transcription of the Licensed Software or any portion or derivative
+thereof, for use with processors manufactured by or for an entity other
+than ST is a material breach of this Agreement and requires a separate
+license from ST. <o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">No
+source code and/or object code relating to and/or based upon Licensed
+Software is to be made available by You unless expressly permitted
+under the section &#8220;License&#8221;.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">You
+acknowledge and agree that the protection of the source code of the
+Licensed Software warrants the imposition of reasonable security
+precautions <o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">In
+the event ST demonstrates to You a reasonable belief that the source
+code of the Licensed Software has been used or distributed in violation
+of this Agreement, ST may by written notification request certification
+as to whether such unauthorized use or distribution has occurred. You
+shall cooperate and assist ST in its determination of whether there has
+been unauthorized use or distribution of the source code of the
+Licensed Software and will take appropriate steps to remedy any
+unauthorized use or distribution.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">NO
+WARRANTY<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">The
+Licensed Software is provided &#8220;as is&#8221; and &#8220;with all faults&#8221; without
+warranty of any kind expressed or implied. ST and its licensors
+expressly disclaim all warranties, expressed, implied or otherwise,
+including without limitation, warranty of merchantability, fitness for
+a particular purpose and non-infringement of intellectual property
+rights. ST does not warrant that the use in whole or in part of the
+Licensed Software will be interrupted or error free, will meet your
+requirements, or will operate with the combination of hardware and
+software selected by You.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">You
+are responsible for determining whether the Licensed Software will be
+suitable for your intended use or application or will achieve your
+intended results. <o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">ST
+has not authorized anyone to make any representation or warranty for
+the Licensed Software, and any technical, applications or design
+information or advice, quality characterization, reliability data or
+other services provided by ST shall not constitute any representation
+or warranty by ST or alter this disclaimer or warranty, and in no
+additional obligations or liabilities shall arise from ST&#8217;s providing
+such information or services. ST does not assume or authorize any other
+person to assume for it any other liability in connection with its
+Licensed Software.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">Nothing
+contained in this Agreement will be construed as <o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">(i)
+a warranty or representation by ST to maintain production of any ST
+device or other hardware or software with which the Licensed Software
+may be used or to otherwise maintain or support the Licensed Software
+in any manner; and<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">(ii)
+a commitment from ST and/or its licensors to bring or prosecute actions
+or suits against third parties for infringement of any of the rights
+licensed hereby, or conferring any rights to bring or prosecute actions
+or suits against third parties for infringement. However, ST has the
+right to terminate this Agreement immediately upon receiving notice of
+any claim, suit or proceeding that alleges that the Licensed Software
+or your use or distribution of the Licensed Software infringes any
+third party intellectual property rights.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">All
+other warranties, conditions or other terms implied by law are excluded
+to the fullest extent permitted by law.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">LIMITATION
+OF LIABILITIES<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">In
+no event ST or its licensors shall be liable to You or any third party
+for any indirect, special, consequential, incidental, punitive damages
+or other damages (including but not limited to, the cost of labor,
+re-qualification, delay, loss of profits, loss of revenues, loss of
+data, costs of procurement of substitute goods or services or the like)
+whether based on contract, tort, or any other legal theory, relating to
+or in connection with the Licensed Software, the documentation or this
+Agreement, even if ST has been advised of the possibility of such
+damages.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">In
+no event shall ST&#8217;s liability to You or any third party under this
+Agreement, including any claim with respect of any third party
+intellectual property rights, for any cause of action exceed 100 US$.
+This section does not apply to the extent prohibited by law. For the
+purposes of this section, any liability of ST shall be treated in the
+aggregate.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">TERMINATION<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">ST
+may terminate this license at any time if You are in breach of any of
+its terms and conditions. Upon termination, You will immediately
+destroy or return all copies of the software and documentation to ST.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">APPLICABLE
+LAW AND JURISDICTION<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">In
+case of dispute and in the absence of an amicable settlement, the only
+competent jurisdiction shall be the Courts of Geneva, Switzerland. The
+applicable law shall be the law of <st1:place w:st="on"><st1:country-region w:st="on">Switzerland</st1:country-region></st1:place>.
+<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">SEVERABILITY<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">If
+any provision of this agreement is or becomes, at any time or for any
+reason, unenforceable or invalid, no other provision of this agreement
+shall be affected thereby, and the remaining provisions of this
+agreement shall continue with the same force and effect as if such
+unenforceable or invalid provisions had not been inserted in this
+Agreement.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">WAIVER<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">The
+waiver by either party of any breach of any provisions of this
+Agreement shall not operate or be construed as a waiver of any other or
+a subsequent breach of the same or a different provision.<o:p></o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;"><o:p>&nbsp;</o:p></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><b><span style="font-size: 10pt; font-family: Verdana; color: black;">RELATIONSHIP
+OF THE PARTIES<o:p></o:p></span></b></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm;"><span style="font-size: 10pt; font-family: Verdana; color: black;">Nothing
+in this Agreement shall create, or be deemed to create, a partnership
+or the relationship of principal and agent or employer and employee
+between the Parties. Neither Party has the authority or power to bind,
+to contract in the name of or to create a liability for the other in
+any way or for any purpose<o:p></o:p></span></p>
+<div class="MsoNormal" style="text-align: center;" align="center"><span style="color: black;">
+<hr align="center" size="2" width="100%">
+</span></div>
+<p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt; text-align: center;" align="center"><span style="font-size: 10pt; font-family: Verdana; color: black;">For
+complete documentation on </span><span style="font-size: 10pt; font-family: Verdana;">STMTouch<span style="color: black;"> Microcontrollers visit </span><u><span style="color: blue;"><a href="http://www.st.com/stmtouch" target="_blank">www.st.com/STMTouch</a></span></u><span style="color: black;"><o:p></o:p></span></span></p>
+<p class="MsoNormal" style="margin: 4.5pt 0cm 4.5pt 18pt; text-align: center;" align="center"><span style="font-size: 10pt; font-family: Verdana; color: black;">For
+complete documentation on </span><span style="font-size: 10pt; font-family: Verdana;">STM32L (<span style="color: black;">CORTEX M3) 32-Bit Microcontrollers
+visit </span><u><span style="color: blue;"><a href="http://www.st.com/stm32l" target="_blank">www.st.com/STM32L</a></span><span style="color: black;"><br>
+</span><span style="color: blue;"></span></u></span><span style="color: black;"><o:p></o:p></span></p>
+</td>
+</tr>
+<tr style="">
+<td style="padding: 0cm;" valign="top">
+<p class="MsoNormal"><span style="font-size: 10pt;"><o:p>&nbsp;</o:p></span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="MsoNormal"><span style="font-size: 10pt;"><o:p></o:p></span></p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</body></html>
