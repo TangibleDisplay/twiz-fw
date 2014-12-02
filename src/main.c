@@ -39,7 +39,7 @@ int main(void)
     // Try load calibration data from flash
     imu_load_calibration_data();
 
-    led_on(RED);
+    led_on(LED_R);
     // Wait for 2 seconds for a 'c' on the serial port.
     // If we get a 'c', then start calibration procedure
     printf("Press c within 2 seconds to start calibration procedure\r\n");
@@ -53,7 +53,7 @@ int main(void)
                 break;
             }
     }
-    led_off(RED);
+    led_off(LED_R);
 
     // Enter main loop
     for (;;)

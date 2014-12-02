@@ -2,7 +2,7 @@
 #include "low_res_timer.h"
 #include "nordic_common.h"
 #include "twi_advertising.h"
-#include "nrf_gpio.h"
+#include "leds.h"
 #include "boards.h"
 
 #define APP_TIMER_MAX_TIMERS            3                                           /**< Maximum number of simultaneously created timers. */
@@ -21,9 +21,11 @@ static void imu_timer_handler(void * p_context)
 	advertising_init();
 
     // Visual debug : toggle LED 0 with a 10% duty cycle
-    static int cpt = 0;
-    nrf_gpio_pin_write(LED_0, (cpt == 0));
-    cpt = (cpt < 10) ? cpt + 1 : 0;
+    static unsigned cpt = 0;
+    if ((++cpt % 10) == 0)
+        led_on(LED_G);
+    else
+        led_off(LED_G);
 }
 
 // Init low res timer

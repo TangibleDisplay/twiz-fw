@@ -8,7 +8,7 @@
 #include "twi_conn.h"
 #include "twi_gap.h"
 #include "ble_hci.h"
-#include "nrf_gpio.h"
+#include "leds.h"
 #include "boards.h"
 
 /**@brief Function for handling the Application's BLE Stack events.
@@ -24,7 +24,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            nrf_gpio_pin_clear(LED_0);
+            led_off(LED);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             break;
 

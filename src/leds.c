@@ -2,30 +2,31 @@
 #include "nrf_gpio.h"
 #include "high_res_timer.h"
 
-void led_on(color_t c)
+void led_on(int c)
 {
-    nrf_gpio_pin_set(c);
+    // inverted logic
+    nrf_gpio_pin_clear(c);
 }
 
-void led_off(color_t c)
+void led_off(int c)
 {
-    nrf_gpio_pin_clear(c);
+    // inverted logic
+    nrf_gpio_pin_set(c);
 }
 
 void leds_init(void)
 {
-    nrf_gpio_cfg_output(GREEN);
-    nrf_gpio_pin_clear(GREEN);
-
-    nrf_gpio_cfg_output(RED);
-    nrf_gpio_pin_clear(RED);
+    for (int i = LED_0; i <= LED_2; i++) {
+        led_off(i);
+        nrf_gpio_cfg_output(i);
+    }
 }
 
-void led_blink(color_t c, uint16_t ms)
+void led_blink(int c, uint16_t ms)
 {
-    nrf_gpio_pin_set(c);
+    led_on(c);
     nrf_timer_delay_ms(ms);
-    nrf_gpio_pin_clear(c);
+    led_off(c);
     nrf_timer_delay_ms(ms);
 }
 
