@@ -183,7 +183,7 @@ void imu_store_calibration_data()
 #define READ_DATA          ('d')
 #define QUIT               ('q')
 
-void imu_calibrate()
+void imu_calibrate(bool button_was_pressed)
 {
     /* Offline calibration for MPU9150 : the user is asked (through the python
        calibration GUI) to move the TWIMU in all directions or to let is standing still horizontaly.
@@ -201,12 +201,12 @@ void imu_calibrate()
     static char buf[BUF_SIZE] = {0};
     static int16_t data[3];
     float *val = NULL;
-    bool button_was_pressed = nrf_gpio_pin_read(BUTTON);
 
     while(1) {
 
-        if (button_was_pressed)
+        if (button_was_pressed) {
             buf[0] = START_CAL_ACC_GYRO; // emulate calibration request
+        }
         else
             getline(BUF_SIZE, buf);
 
@@ -253,6 +253,7 @@ void imu_calibrate()
 
             // simplifed interaction mode: assume we want to store anyway:
             if (button_was_pressed) {
+                button_was_pressed = false;
                 imu_store_calibration_data();
                 return;
             }

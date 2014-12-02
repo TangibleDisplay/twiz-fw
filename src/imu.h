@@ -10,7 +10,7 @@ typedef struct imu_data_s {
 void imu_init(void);
 void imu_update(void);
 imu_data_t * get_imu_data(imu_data_t * imu_data);
-void imu_calibrate(void);
+void imu_calibrate(bool button_was_pressed);
 bool imu_load_calibration_data(void);
 
 
