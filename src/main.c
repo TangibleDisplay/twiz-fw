@@ -40,11 +40,11 @@ int main(void)
     imu_load_calibration_data();
 
     led_on(LED_G);
-    // Wait for 2 seconds for a 'c' on the serial port.
+    // Wait for 1 second for a 'c' on the serial port or a button press.
     // If we get a 'c', then start calibration procedure
-    printf("Press c within 2 seconds to start calibration procedure\r\n");
+    printf("Press button or 'c' key to start calibration procedure\r\n");
     static char c;
-    for (int i=0; i<2000; i++) {
+    for (int i=0; i<1000; i++) {
         bool button_was_pressed = nrf_gpio_pin_read(BUTTON);
         if (getchar_timeout(1, &c) || button_was_pressed)
             if(c == 'c' || button_was_pressed) {

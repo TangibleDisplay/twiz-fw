@@ -160,8 +160,8 @@ bool imu_load_calibration_data()
     else {
         printf("No valid calibration found in flash.\r\n");
         printf("YOU SHOULD REALLY CONSIDER RUNNING THE CALIBRATION PROCEDURE !!!\r\n");
-        for(int i=0; i<100; i++)
-            led_blink(LED_G, 20); // ms
+        for(int i=0; i<25; i++)
+            led_blink(LED_G, 40); // ms
         return false;
     }
 }
