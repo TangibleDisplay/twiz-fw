@@ -20,7 +20,7 @@
  * Name of device. Will be included in the advertising data.
  */
 #ifndef DEVICE_NAME
-#define DEVICE_NAME                     "Twi"
+#define DEVICE_NAME                     "Twiz"
 #endif
 
 /*

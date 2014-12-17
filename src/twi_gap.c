@@ -15,9 +15,13 @@ void gap_params_init(void) {
 
   BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
-  ERR_CHECK(sd_ble_gap_device_name_set(&sec_mode,
-				       (const uint8_t *)DEVICE_NAME,
-				       strlen(DEVICE_NAME)));
+  const int len = strlen(DEVICE_NAME) + 2;              // add 2 hex characters
+  char name[len];                                       // ...to differenciate.
+  ble_gap_addr_t p_addr;
+  sd_ble_gap_address_get(&p_addr);                      // get BLE address
+  sprintf(name, "%s%02X", DEVICE_NAME, p_addr.addr[0]); // use the MSB only
+
+  ERR_CHECK(sd_ble_gap_device_name_set(&sec_mode, (const uint8_t*)name, len));
 
   memset(&gap_conn_params, 0, sizeof(gap_conn_params));
   gap_conn_params.min_conn_interval = MIN_CONN_INTERVAL;
