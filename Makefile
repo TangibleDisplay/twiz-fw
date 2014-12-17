@@ -207,7 +207,7 @@ flash-all: ${SOFTDEVICE_ELF} ${ELF} startgdbserver
 	${GDB} -ex "source scripts/flash.gdb" -ex "flash-all ${SOFTDEVICE_ELF} ${ELF}" -ex "set confirm off" -ex "quit"
 
 flash: ${ELF} startgdbserver
-	$(GDB) -ex "source scripts/flash.gdb" -ex "flash ${ELF}" -ex "set confirm off" -ex "quit"
+	$(GDB) -ex "source scripts/flash.gdb" -ex "flash-elf ${ELF}" -ex "set confirm off" -ex "quit"
 
 erase-all: startgdbserver
 	$(GDB) -ex "source scripts/flash.gdb" -ex "erase-all" -ex "set confirm off" -ex "quit"
