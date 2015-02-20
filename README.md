@@ -63,3 +63,11 @@ A lot of improvements need to be done, let us know if you want to collaborate:
 
     hi(a)twiz.io
 
+
+License
+-------
+
+![Creative Commons NonCommercial License](http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png)
+
+This project is released under a Creative Commons, Attribution-NonCommercial-ShareAlike, Version 3.0 License:
+http://creativecommons.org/licenses/by-nc-sa/3.0
