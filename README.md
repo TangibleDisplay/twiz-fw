@@ -9,6 +9,11 @@ sensors (3D accelerometer + 3D gyroscope + 3D magnetometer) is made on board.
 The fusion result is sent as Euler angles, telling how it id tilted compared
 to the gravity vector and how it is oriented compared to the north pole.
 
+![twiz](https://github.com/TangibleDisplay/twiz-fw/blob/master/doc/twiz.jpg)
+
+The following repository allows using the data:
+https://github.com/TangibleDisplay/twiz
+
 
 Details
 -------
