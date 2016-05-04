@@ -153,10 +153,40 @@
 static uint8_t Ascale = AFS_2G;     // AFS_2G, AFS_4G, AFS_8G, AFS_16G
 static uint8_t Gscale = GFS_250DPS; // GFS_250DPS, GFS_500DPS, GFS_1000DPS, GFS_2000DPS
 
+PWR_MGMT_1_RESET = 1<<7;
+PWR_MGMT_1_SLEEP = 1<<6;
+PWR_MGMT_1_CYCLE = 1<<5;
+PWR_MGMT_1_TEMP_DIS = 1<<4;
+PWR_MGMT_1_CLKSEL_INT = 0;
+PWR_MGMT_1_CLKSEL_PLL_X = 1;
+PWR_MGMT_1_CLKSEL_PLL_Y = 2;
+PWR_MGMT_1_CLKSEL_PLL_Z = 3;
+PWR_MGMT_1_CLKSEL_PLL_EXT_32 = 4;
+PWR_MGMT_1_CLKSEL_PLL_EXT_19 = 5;
+PWR_MGMT_1_CLKSEL_STOP_RESET = 7;
+
 void mpu9150_reset() {
     // Write a one to bit 7 reset bit; toggle reset device
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x80);
-    while(i2c_read_byte(MPU9150_ADDRESS, PWR_MGMT_1) & 0x80) ;
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, PWR_MGMT_1_RESET);
+    while(i2c_read_byte(MPU9150_ADDRESS, PWR_MGMT_1) & PWR_MGMT_1_RESET) ;
+    nrf_delay_ms(200);
+}
+
+void mpu9150_sleep() {
+    char value;
+    value = i2c_read_byte(MPU9150_ADDRESS, PWR_MGMT_1);
+    // value = value | PWR_MGMT_1_CYCLE;
+    value = value | PWR_MGMT_1_SLEEP;
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, value);
+    nrf_delay_ms(200);
+}
+
+void mpu9150_wake() {
+    char value;
+    value = i2c_read_byte(MPU9150_ADDRESS, PWR_MGMT_1);
+    // value = value & ~PWR_MGMT_1_CYCLE;
+    value = value & ~PWR_MGMT_1_SLEEP;
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, value);
     nrf_delay_ms(200);
 }
 
@@ -175,7 +205,7 @@ void mpu9150_init()
     nrf_delay_ms(100);
 
     // Set clock source to be PLL with x-axis gyroscope reference, bits 2:0 = 001
-    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, 0x01);
+    i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_1, PWR_MGMT_1_CLKSEL_PLL_X);
     i2c_write_byte(MPU9150_ADDRESS, PWR_MGMT_2, 0x00);
     nrf_delay_ms(100);
 

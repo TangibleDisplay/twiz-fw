@@ -1,6 +1,8 @@
 #ifndef MPU_H
 #define MPU_H
 
+#define MAX_MESURE_BUFFER 32
+
 // warning, we inverse the endianness before storing data here:
 typedef struct imu_data_s {
     uint16_t accel[3]; // x, y, z

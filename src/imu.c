@@ -25,6 +25,8 @@ static float pitch, yaw, roll;
 
 // Variables to hold latest sensor data values
 static float ax, ay, az, gx, gy, gz, mx, my, mz;
+static float mesure_buffer[MAX_MESURE_BUFFER];
+static int mesure_buffer_index;
 
 // Calibration data
 calibration_data_t cal = {.mag_scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
@@ -37,11 +39,14 @@ calibration_data_t cal = {.mag_scale = {1., 0, 0, 0, 1., 0, 0, 0, 1.},
 void imu_update()
 {
     // Used to calculate integration interval
-    static int lastUpdate = 0, Now = 0;
+    static int lastUpdate = 0, Now = 0, wakuptime = 0;
+    static bool sleeping = false;
+    bool update = false;
+
 
     // If intPin goes high or NEW_DATA register is set, then all data registers have new data
     // XXX FIXME : should do this in interrupt service
-    if (mpu9150_new_data()) {
+    if (!sleeping && mpu9150_new_data()) {
         static float data[6];
 
         // Read accel, temp and gyro data
@@ -55,6 +60,18 @@ void imu_update()
         gy = data[4];
         gz = data[5];
 
+	mesure_buffer[mesure_buffer_index++] = az;
+	if (mesure_buffer_index > MAX_MESURE_BUFFER)
+	{
+	    mesure_buffer_index = 0;
+	}
+
+	for (int i=1; i < MAX_MESURE_BUFFER; i++)
+	{
+	    if (mesure_buffer[i] != mesure_buffer[0])
+		update = true;
+		break;
+	}
         // Get mag data
         ak8975a_read_data(&mx, &my, &mz);
     }
@@ -64,6 +81,30 @@ void imu_update()
     float dt = (float)((Now - lastUpdate)/1000000.0f) ;
     lastUpdate = Now;
 
+    if (!update)
+    {
+	sleeping = true;
+	led_on(LED_G);
+        wakuptime = Now + 10 * dt * 10.0f;
+        mpu9150_sleep();
+    }
+
+    if (sleeping)
+	led_on(LED_B);
+    else
+	led_off(LED_B);
+
+    if (wakuptime > Now)
+	led_on(LED_R);
+    else
+	led_off(LED_R);
+
+    if (sleeping && wakuptime < Now)
+    {
+	sleeping = false;
+	mpu9150_wake();
+	led_off(LED_G);
+    }
     madgwick_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz, dt, q);
 
 #if 0
@@ -113,6 +154,12 @@ void imu_init(void)
 
     // Allow calibration with button:
     nrf_gpio_cfg_input(BUTTON, NRF_GPIO_PIN_PULLDOWN);
+
+    for (int i=0; i < MAX_MESURE_BUFFER; i++)
+    {
+	mesure_buffer[i] = 0;
+    }
+
 }
 
 static inline uint16_t byte_swap(uint16_t val) {
