@@ -61,18 +61,18 @@ void imu_update()
         gy = data[4];
         gz = data[5];
 
-	mesure_buffer[mesure_buffer_index++] = az;
-	if (mesure_buffer_index > MAX_MESURE_BUFFER)
-	{
-	    mesure_buffer_index = 0;
-	}
+        mesure_buffer[mesure_buffer_index++] = az;
+        if (mesure_buffer_index > MAX_MESURE_BUFFER)
+        {
+            mesure_buffer_index = 0;
+        }
 
-	for (int i=1; i < MAX_MESURE_BUFFER; i++)
-	{
-	    if (mesure_buffer[i] != mesure_buffer[0])
-		update = true;
-		break;
-	}
+        for (int i=1; i < MAX_MESURE_BUFFER; i++)
+        {
+            if (mesure_buffer[i] != mesure_buffer[0])
+                update = true;
+                break;
+        }
         // Get mag data
         ak8975a_read_data(&mx, &my, &mz);
     }
@@ -84,27 +84,27 @@ void imu_update()
 
     if (!update)
     {
-	sleeping = true;
-	led_on(LED_G);
+        sleeping = true;
+        led_on(LED_G);
         wakuptime = Now + 10 * dt * 10.0f;
         mpu9150_sleep();
     }
 
     if (sleeping)
-	led_on(LED_B);
+        led_on(LED_B);
     else
-	led_off(LED_B);
+        led_off(LED_B);
 
     if (wakuptime > Now)
-	led_on(LED_R);
+        led_on(LED_R);
     else
-	led_off(LED_R);
+        led_off(LED_R);
 
     if (sleeping && wakuptime < Now)
     {
-	sleeping = false;
-	mpu9150_wake();
-	led_off(LED_G);
+        sleeping = false;
+        mpu9150_wake();
+        led_off(LED_G);
     }
     madgwick_quaternion_update(ax, ay, az, gx, gy, gz, mx, my, mz, dt, q);
 
@@ -158,7 +158,7 @@ void imu_init(void)
 
     for (int i=0; i < MAX_MESURE_BUFFER; i++)
     {
-	mesure_buffer[i] = 0;
+        mesure_buffer[i] = 0;
     }
 
 }
