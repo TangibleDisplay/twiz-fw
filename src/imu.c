@@ -41,12 +41,13 @@ void imu_update()
     // Used to calculate integration interval
     static int lastUpdate = 0, Now = 0, wakuptime = 0;
     static bool sleeping = false;
-    bool update = false;
+    bool update = true;
 
 
     // If intPin goes high or NEW_DATA register is set, then all data registers have new data
     // XXX FIXME : should do this in interrupt service
     if (!sleeping && mpu9150_new_data()) {
+        update = false;
         static float data[6];
 
         // Read accel, temp and gyro data
